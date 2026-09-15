@@ -1,0 +1,22 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pydantic-settings
+python-dotenv
+python-multipart
+pymupdf
+chromadb
+sentence-transformers
+google-generativeai
+alembic
+rank_bm25
+
+python-jose[cryptography]
+passlib[bcrypt]
+nltk
+pytest
+httpx
+# Phase 10 additions
+python-docx
+aiofiles
