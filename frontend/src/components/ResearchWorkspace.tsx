@@ -1,15 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Save, History, Scale, FileText, Bookmark, Share2, Download, AlertCircle, ChevronRight, X, Clock, MessageSquare, Loader2, Link2, BookOpen, ExternalLink, Menu } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus, History, FileText, Bookmark, ChevronRight, X, Loader2, BookOpen, Menu, ShieldAlert } from 'lucide-react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import CaseIntelligence from './CaseIntelligence';
-import ComparativeIntelligence from './components/ComparativeIntelligence'; // I'll fix this import later
+import ComparativeIntelligence from './ComparativeIntelligence';
 import PrecedentGraph from './PrecedentGraph';
-import ReactMarkdown from 'react-markdown';
-
-// Mock component for Comparative Intelligence (will map to actual when imported properly)
-import ComparativeIntell from './ComparativeIntelligence';
 
 export default function ResearchWorkspace() {
   const [activeSession, setActiveSession] = useState<any>(null);
@@ -28,11 +24,6 @@ export default function ResearchWorkspace() {
   const [briefMarkdown, setBriefMarkdown] = useState<string | null>(null);
   const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
 
-  // Right panel state (Ask Lexora)
-  const [chatQuery, setChatQuery] = useState("");
-  const [chatHistory, setChatHistory] = useState<any[]>([]);
-  const [isChatting, setIsChatting] = useState(false);
-
   // Source drawer
   const [selectedSource, setSelectedSource] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -43,7 +34,7 @@ export default function ResearchWorkspace() {
 
   const fetchSessions = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/research');
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/research`);
       setSessions(res.data);
     } catch (err) {
       console.error(err);
@@ -52,7 +43,7 @@ export default function ResearchWorkspace() {
 
   const createSession = async () => {
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/research', {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/research`, {
         title: searchQuery || "New Research Session",
         research_question: searchQuery || null
       });
@@ -141,6 +132,9 @@ export default function ResearchWorkspace() {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/cases/${caseId}`);
       setCaseData(res.data);
+      if (res.data?.graph) {
+        setGraphData(res.data.graph);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -260,6 +254,22 @@ export default function ResearchWorkspace() {
           {activeView === 'SEARCH' && (
             <div className="flex-1 overflow-auto p-6 md:p-10 flex justify-center pb-24 custom-scrollbar">
               <div className="w-full max-w-4xl space-y-6">
+                {/* Controlled Pilot Safeguards & Mandatory Human Legal Review Banner */}
+                <div className="bg-amber-950/20 border border-amber-800/40 rounded-lg p-4 text-xs text-amber-200/90 shadow-sm backdrop-blur-sm">
+                  <div className="flex items-center gap-2 font-bold text-amber-300 mb-1.5">
+                    <ShieldAlert size={16} className="text-amber-400 shrink-0" />
+                    <span>Controlled Pilot Safeguards & Mandatory Human Legal Review</span>
+                  </div>
+                  <div className="space-y-1 text-[11px] leading-relaxed text-amber-200/75">
+                    <p>
+                      <strong>Corpus Scope:</strong> Grounded strictly against indexed Supreme Court of India constitutional and commercial landmark authorities. Specialized local statutory rules and unindexed tribunal matters are outside the verified scope.
+                    </p>
+                    <p>
+                      <strong>Human Review Required:</strong> LEXORA provides AI-assisted research synthesis and does not constitute qualified legal advice. Practitioners must independently review all supporting passages and citations before court filings or consequential decisions.
+                    </p>
+                  </div>
+                </div>
+
                 {isSearching && (
                   <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4">
                     <Loader2 className="animate-spin text-primary" size={32} />
@@ -303,7 +313,15 @@ export default function ResearchWorkspace() {
           {/* Comparative Intelligence */}
           {activeView === 'COMPARE' && (
              <div className="flex-1 overflow-hidden relative">
-                <ComparativeIntell comparisonData={comparisonData} onViewSource={onViewSource} onClose={() => setActiveView('SEARCH')} />
+                <ComparativeIntelligence comparisonData={comparisonData} onViewSource={onViewSource} onClose={() => setActiveView('SEARCH')} />
+             </div>
+          )}
+
+          {/* Precedent Graph */}
+          {activeView === 'GRAPH' && (
+             <div className="flex-1 overflow-hidden relative">
+                <button onClick={() => setActiveView('SEARCH')} className="absolute top-4 right-4 z-10 text-xs bg-slate-800/80 backdrop-blur text-slate-300 px-3 py-1.5 rounded hover:bg-slate-700 border border-slate-700">Close Graph</button>
+                <PrecedentGraph graphData={graphData} onNodeClick={(id) => openCase(Number(id))} onEdgeClick={() => {}} />
              </div>
           )}
 
@@ -321,8 +339,8 @@ export default function ResearchWorkspace() {
                       <span className="font-serif tracking-widest uppercase">Synthesizing evidence...</span>
                     </div>
                   ) : (
-                    <div className="prose prose-invert prose-slate prose-headings:text-primary max-w-none bg-slate-900/40 p-8 rounded-xl border border-slate-800">
-                       <ReactMarkdown>{briefMarkdown || ""}</ReactMarkdown>
+                    <div className="prose prose-invert prose-slate prose-headings:text-primary max-w-none bg-slate-900/40 p-8 rounded-xl border border-slate-800 whitespace-pre-wrap font-sans text-slate-200 leading-relaxed">
+                       {briefMarkdown || ""}
                     </div>
                   )}
                </div>
@@ -352,6 +370,24 @@ export default function ResearchWorkspace() {
                   </div>
                 ))}
                 {sessions.length === 0 && <div className="text-center text-slate-500 py-12">No previous research sessions found.</div>}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Source Evidence Modal */}
+      <AnimatePresence>
+        {selectedSource && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl w-full max-w-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-slate-200 text-sm">Source Evidence</h3>
+                <button onClick={() => setSelectedSource(null)} className="text-slate-400 hover:text-white"><X size={18} /></button>
+              </div>
+              <p className="text-sm text-slate-300 italic mb-4">"{selectedSource.text}"</p>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => { addEvidenceToSession(selectedSource); setSelectedSource(null); }} className="px-3 py-1.5 bg-primary text-black font-bold text-xs rounded hover:bg-primary/90">Save as Evidence</button>
               </div>
             </motion.div>
           </div>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, X, FileText, AlertCircle, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -74,17 +74,21 @@ export default function DocumentUpload({ onClose, onComplete }: DocumentUploadPr
     formData.append('file', file);
 
     try {
-      const token = localStorage.getItem('access_token');
-      await axios.post("${API_URL}/api/documents/upload", formData, {
+      const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+      await axios.post(`${API_URL}/api/documents/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          ...(token ? { Authorization: "Bearer $token" } : {})
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
       });
       onComplete();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Upload error', err);
-      setError(err.response?.data?.detail || 'Failed to upload document. Please try again.');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to upload document. Please try again.');
+      } else {
+        setError('Failed to upload document. Please try again.');
+      }
       setIsUploading(false);
     }
   };
@@ -127,11 +131,11 @@ export default function DocumentUpload({ onClose, onComplete }: DocumentUploadPr
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={"w-full h-48 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all $
+              className={`w-full h-48 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
                 isDragging 
                   ? 'border-blue-500 bg-blue-500/10' 
                   : 'border-slate-700 bg-slate-800/30 hover:border-slate-600 hover:bg-slate-800/50'
-              "}
+              }`}
             >
               <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mb-4">
                 <Upload size={24} className={isDragging ? 'text-blue-400' : 'text-slate-400'} />
@@ -150,11 +154,11 @@ export default function DocumentUpload({ onClose, onComplete }: DocumentUploadPr
           ) : (
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
               <div className="flex items-center gap-4">
-                <div className={"w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 $
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
                   file.name.endsWith('.pdf') ? 'bg-red-500/20 text-red-400' :
                   file.name.endsWith('.docx') ? 'bg-blue-500/20 text-blue-400' :
                   'bg-slate-700 text-slate-300'
-                "}>
+                }`}>
                   <FileText size={24} />
                 </div>
                 <div className="flex-1 min-w-0">

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     # Security / Auth
     SECRET_KEY: str = "change_this_to_a_secure_random_string_in_production"
+    JWT_SECRET_KEY: Optional[str] = None
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
@@ -46,6 +47,14 @@ class Settings(BaseSettings):
 
     # Lines per simulated page for .txt documents
     TXT_LINES_PER_PAGE: int = 50
+
+    # ----------------------------------------------------------------
+    # Phase 11 — Privacy-Safe Pilot Monitoring Configuration
+    # ----------------------------------------------------------------
+    PILOT_MONITORING_ENABLED: bool = True
+    PILOT_MONITORING_LOG_QUERIES: bool = False   # False by default for privacy compliance
+    PILOT_MONITORING_RETENTION_DAYS: int = 30
+    PILOT_MONITORING_DIR: str = "./storage/monitoring"
 
     class Config:
         env_file = ".env"

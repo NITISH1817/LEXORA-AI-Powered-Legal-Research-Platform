@@ -68,21 +68,32 @@ def _get_authorized_document(
 ) -> Document:
     """
     Fetch document and verify the user is authorized to access it.
-    Raises 404 (not 403) to avoid leaking document existence.
+    
+    Security Policy:
+    - Read access: Owner, Admin, or any user for public/seeded documents (owner_id is None).
+    - Mutation/Deletion (require_owner=True): ONLY document owner or Admin.
+      Public/seeded documents (owner_id is None) cannot be deleted or reprocessed by non-admins.
+    - Non-owners receive 404 on inaccessible documents to prevent ID probing.
     """
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
 
-    is_owner = doc.owner_id == current_user.id
+    is_owner = (doc.owner_id is not None) and (doc.owner_id == current_user.id)
+    is_public = doc.owner_id is None
     is_admin = current_user.role == "ADMIN"
 
-    if not (is_owner or is_admin):
-        # VIEWER role: raise 404 to avoid disclosing existence
+    # Enforce read authorization
+    if not (is_owner or is_public or is_admin):
+        # Prevent disclosing existence to other users
         raise HTTPException(status_code=404, detail="Document not found.")
 
+    # Enforce modification / deletion authorization
     if require_owner and not (is_owner or is_admin):
-        raise HTTPException(status_code=403, detail="Operation not permitted.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operation not permitted. Public or system-seeded documents can only be modified or deleted by administrators."
+        )
 
     return doc
 
@@ -95,6 +106,7 @@ def _get_authorized_document(
 async def upload_document(
     file: UploadFile = File(...),
     case_id: Optional[int] = Query(None, description="Link to existing case (optional)"),
+    sync: bool = Query(False, description="Run pipeline synchronously (useful for test suites/CLI)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -117,17 +129,19 @@ async def upload_document(
     # Validate (raises HTTPException on failure)
     title, ext = validate_document(original_filename, file.content_type or "", file_bytes)
 
-    # Duplicate detection
+    # Duplicate detection (scoped to current user)
     file_hash = calculate_file_hash(file_bytes)
-    existing_doc_id = find_duplicate_document(db, file_hash)
+    existing_doc_id = find_duplicate_document(db, file_hash, owner_id=current_user.id)
     if existing_doc_id:
-        return DocumentUploadResponse(
-            document_id=existing_doc_id,
-            title=title,
-            status="READY",
-            message="Document already exists. Returning existing document.",
-            duplicate_of=existing_doc_id,
-        )
+        existing_doc = db.query(Document).filter(Document.id == existing_doc_id).first()
+        if existing_doc:
+            return DocumentUploadResponse(
+                document_id=existing_doc.id,
+                title=existing_doc.title,
+                status=existing_doc.status,
+                message="Document already exists. Returning existing document.",
+                duplicate_of=existing_doc.id,
+            )
 
     # Generate internal ID and store file securely
     internal_id = generate_document_id()
@@ -159,9 +173,13 @@ async def upload_document(
             pass
         raise HTTPException(status_code=500, detail="Could not create document record.")
 
-    # Launch pipeline in background thread
-    threading.Thread(target=run_pipeline, args=(doc.id,), daemon=True).start()
-    logger.info("Launched pipeline for document %d (type=%s)", doc.id, ext)
+    # Launch pipeline in background thread or synchronously if requested
+    if sync:
+        run_pipeline(doc.id)
+        db.refresh(doc)
+    else:
+        threading.Thread(target=run_pipeline, args=(doc.id,), daemon=True).start()
+        logger.info("Launched pipeline for document %d (type=%s)", doc.id, ext)
 
     job = db.query(DocumentProcessingJob).filter(
         DocumentProcessingJob.document_id == doc.id
@@ -332,6 +350,13 @@ def trigger_processing(
     if doc.status == "READY":
         return {"message": "Document is already processed.", "status": "READY"}
 
+    active_stages = ("EXTRACTING", "PARSING", "STRUCTURING", "CHUNKING", "EMBEDDING", "INDEXING")
+    if doc.status in active_stages:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Document is currently being processed ({doc.status})."
+        )
+
     # Reset job
     job = db.query(DocumentProcessingJob).filter(
         DocumentProcessingJob.document_id == document_id
@@ -367,6 +392,13 @@ def retry_processing(
 
     if doc.status == "READY":
         return {"message": "Document is already ready.", "status": "READY"}
+
+    active_stages = ("EXTRACTING", "PARSING", "STRUCTURING", "CHUNKING", "EMBEDDING", "INDEXING")
+    if doc.status in active_stages:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Document is currently being processed ({doc.status})."
+        )
 
     if doc.status not in ("FAILED", "OCR_REQUIRED"):
         raise HTTPException(
@@ -412,10 +444,19 @@ def delete_document(
     if current_user.role not in ("RESEARCHER", "ADMIN"):
         raise HTTPException(status_code=403, detail="Operation not permitted.")
 
-    # 1. Remove vector embeddings
+    # 1. Decouple any ImportantPassage referencing this document's chunks
+    chunk_ids = [c.id for c in doc.chunks]
+    if chunk_ids:
+        from backend.models.domain import ImportantPassage
+        db.query(ImportantPassage).filter(ImportantPassage.chunk_id.in_(chunk_ids)).update(
+            {"chunk_id": None}, synchronize_session=False
+        )
+        db.commit()
+
+    # 2. Remove vector embeddings
     delete_document_chunks(document_id)
 
-    # 2. Delete from storage
+    # 3. Delete from storage
     storage_path = doc.storage_path
     if storage_path and os.path.exists(storage_path):
         try:
@@ -427,7 +468,7 @@ def delete_document(
         except OSError as e:
             logger.warning("Could not delete file %s: %s", storage_path, str(e))
 
-    # 3. Delete DB record (cascade handles related records)
+    # 4. Delete DB record (cascade handles related records)
     db.delete(doc)
     db.commit()
 
@@ -448,6 +489,9 @@ def get_document_page(
 ):
     """Fetch extracted text for a single page (for source viewer)."""
     _get_authorized_document(document_id, db, current_user)
+
+    if page_number < 1:
+        raise HTTPException(status_code=400, detail="Page number must be at least 1.")
 
     page = db.query(DocumentPage).filter(
         DocumentPage.document_id == document_id,
@@ -492,6 +536,9 @@ def search_in_document_route(
     Semantic search within a single document.
     Returns matching pages with text snippets.
     """
+    if not q.strip():
+        raise HTTPException(status_code=400, detail="Search query cannot be empty.")
+
     doc = _get_authorized_document(document_id, db, current_user)
 
     if doc.status != "READY":

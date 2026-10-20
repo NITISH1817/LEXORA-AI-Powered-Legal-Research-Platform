@@ -1,37 +1,81 @@
 version: '3.8'
 
+# ==============================================================================
+# LEXORA Production Docker Compose Configuration — Phase 12
+# Single-instance architecture with persistent volumes and health dependencies
+# ==============================================================================
+
 services:
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lexora_backend
+    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
-      - DATABASE_URL=sqlite:///./data/legal_intel.db
       - ENVIRONMENT=production
+      - PROJECT_NAME=LEXORA Legal Intelligence Workbench
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173}
+      - DATABASE_URL=sqlite:////app/data/legal_intel.db
+      - UPLOAD_DIR=/app/storage/uploads
+      - PROCESSED_DIR=/app/storage/processed
+      - PILOT_MONITORING_DIR=/app/storage/monitoring
+      - CHROMA_DB_DIR=/app/chroma_db
+      - PILOT_MONITORING_ENABLED=${PILOT_MONITORING_ENABLED:-true}
+      - PILOT_MONITORING_LOG_QUERIES=${PILOT_MONITORING_LOG_QUERIES:-false}
+      - PILOT_MONITORING_RETENTION_DAYS=${PILOT_MONITORING_RETENTION_DAYS:-30}
+      - MAX_FILE_SIZE_MB=50
+      - ALLOWED_EXTENSIONS=pdf,docx,txt
     volumes:
-      - ./data:/app/data
-    restart: unless-stopped
+      - lexora_db:/app/data
+      - lexora_uploads:/app/storage/uploads
+      - lexora_processed:/app/storage/processed
+      - lexora_monitoring:/app/storage/monitoring
+      - lexora_chroma:/app/chroma_db
+      - lexora_backups:/app/backups
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
       interval: 30s
       timeout: 10s
+      start_period: 15s
       retries: 3
+    security_opt:
+      - no-new-privileges:true
 
-  # Simple node container to build/serve the frontend if needed
   frontend:
-    image: node:20-alpine
-    working_dir: /app
-    volumes:
-      - ./frontend:/app
-    command: >
-      sh -c "npm install && npm run build && npx serve -s dist -l 5173"
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    depends_on:
-      - backend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lexora_frontend
     restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  lexora_db:
+    name: lexora_db_data
+  lexora_uploads:
+    name: lexora_uploads_data
+  lexora_processed:
+    name: lexora_processed_data
+  lexora_monitoring:
+    name: lexora_monitoring_data
+  lexora_chroma:
+    name: lexora_chroma_data
+  lexora_backups:
+    name: lexora_backups_data

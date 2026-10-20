@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState, type FormEvent } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { ShieldCheck } from 'lucide-react';
 
 export default function Login() {
@@ -8,13 +8,18 @@ export default function Login() {
   const { login } = useAuth();
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
       await login(email, password);
       // Auth context redirects to workspace
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Invalid email or password.");
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axErr = err as { response?: { data?: { detail?: string } } };
+        setError(axErr.response?.data?.detail || "Invalid email or password.");
+      } else {
+        setError("Invalid email or password.");
+      }
     }
   };
 

@@ -25,11 +25,12 @@ def index_document_chunk(
     # Phase 10 additions
     section: str = "",
     chunk_sequence: int = 0,
+    owner_id: int = 0,
 ):
     """
     Index a document chunk into the vector store and BM25 index.
     Metadata supports filtering by case_id, document_id, court, year,
-    section, legal_topics, and page_number for hybrid search.
+    section, legal_topics, owner_id, and page_number for hybrid search.
     """
     embedding = get_embedding(text)
 
@@ -41,6 +42,7 @@ def index_document_chunk(
         "court": court,
         "year": year,
         "chunk_sequence": chunk_sequence,
+        "owner_id": owner_id or 0,
     }
 
     if category:
@@ -100,24 +102,41 @@ def delete_document_chunks(document_id: int) -> int:
 
 
 def search_semantic(query: str, n_results: int = 10, filters: dict = None):
-    query_embedding = get_embedding(query)
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=n_results,
-        where=filters
-    )
+    if not query or not query.strip():
+        return []
 
-    parsed_results = []
-    if results["ids"] and len(results["ids"]) > 0:
-        for i in range(len(results["ids"][0])):
-            parsed_results.append({
-                "id": results["ids"][0][i],
-                "score": 1.0 - (results["distances"][0][i] if "distances" in results and results["distances"] else 0.0),
-                "metadata": results["metadatas"][0][i],
-                "text": results["documents"][0][i],
-                "source": "semantic"
-            })
-    return parsed_results
+    try:
+        query_embedding = get_embedding(query)
+    except Exception as e:
+        logger.error(f"Semantic embedding generation failed: {e}")
+        return []
+
+    try:
+        # Check if collection is empty
+        if collection.count() == 0:
+            return []
+
+        where_clause = filters if filters else None
+        results = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=max(1, min(100, n_results)),
+            where=where_clause
+        )
+
+        parsed_results = []
+        if results and results.get("ids") and len(results["ids"]) > 0:
+            for i in range(len(results["ids"][0])):
+                parsed_results.append({
+                    "id": results["ids"][0][i],
+                    "score": 1.0 - (results["distances"][0][i] if "distances" in results and results["distances"] else 0.0),
+                    "metadata": results["metadatas"][0][i],
+                    "text": results["documents"][0][i],
+                    "source": "semantic"
+                })
+        return parsed_results
+    except Exception as e:
+        logger.error(f"ChromaDB search_semantic query failed: {e}")
+        return []
 
 
 def search_in_document(document_id: int, query: str, n_results: int = 10) -> list:

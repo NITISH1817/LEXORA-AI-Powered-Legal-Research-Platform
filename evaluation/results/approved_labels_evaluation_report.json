@@ -1,0 +1,21 @@
+{
+  "status": "INSUFFICIENT_APPROVED_LABELS",
+  "timestamp": "2026-10-20T14:56:18.617588+00:00",
+  "benchmark_metadata": {
+    "name": "LEXORA Verified Legal Intelligence Benchmark",
+    "version": "3.0.0",
+    "evaluation_scope": "approved_labels_only",
+    "split": "all",
+    "total_benchmark_queries": 160,
+    "approved_gold_label_count": 0,
+    "pending_review_count": 160
+  },
+  "metrics": null,
+  "message": "Authoritative gold-label evaluation cannot be scored: 0 queries have received formal approval from qualified human legal reviewers.",
+  "limitation_statement": "Per Phase 15 Task 5 evaluation integrity rules, pending and unadjudicated benchmark items are strictly excluded from authoritative gold-label scoring. Automated evaluation code cannot approve gold labels. Until human legal practitioners complete adjudication, authoritative metrics remain uncalculated to prevent misleading claims of accuracy.",
+  "release_gate_status": {
+    "gate_passed": false,
+    "reason": "ZERO_APPROVED_LABELS",
+    "recommended_action": "Complete human adjudication for priority items in evaluation/PHASE15_CRITICAL_REVIEW_QUEUE.md"
+  }
+}

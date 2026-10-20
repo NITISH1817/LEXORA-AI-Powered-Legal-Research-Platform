@@ -1,0 +1,18 @@
+{
+  "total_benchmark_queries": 160,
+  "recorded_actions_count": 0,
+  "status_distribution": {
+    "PENDING_HUMAN_LEGAL_REVIEW": 160,
+    "IN_REVIEW": 0,
+    "SOURCE_VERIFIED": 0,
+    "ANNOTATION_REVIEWED": 0,
+    "APPROVED": 0,
+    "REJECTED": 0,
+    "NEEDS_ADJUDICATION": 0,
+    "DISAGREEMENT_ADJUDICATED": 0
+  },
+  "approved_gold_labels_count": 0,
+  "pending_review_count": 160,
+  "in_review_count": 0,
+  "adjudication_required_count": 0
+}

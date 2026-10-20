@@ -17,17 +17,13 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const formData = new URLSearchParams();
-            formData.append('username', email);
-            formData.append('password', password);
-
-            const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/login', formData, {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            });
-
-            login(res.data.access_token);
-        } catch (err: any) {
-            setError(err.response?.data?.detail || 'Authentication failed. Please check your credentials.');
+            await login(email, password);
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.detail || 'Authentication failed. Please check your credentials.');
+            } else {
+                setError('Authentication failed. Please check your credentials.');
+            }
         } finally {
             setIsLoading(false);
         }

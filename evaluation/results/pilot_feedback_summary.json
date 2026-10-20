@@ -1,0 +1,59 @@
+{
+  "timestamp": "2026-10-20T14:56:18.626525+00:00",
+  "status": "EMPTY_STATE_VERIFIED",
+  "monitoring_directory": "./storage/monitoring",
+  "is_empty_state": true,
+  "total_telemetry_events": 0,
+  "total_feedback_submissions": 0,
+  "total_feedback_records": 0,
+  "average_rating": null,
+  "rating_distribution": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0
+  },
+  "issue_taxonomy_distribution": {
+    "IR_IRRELEVANT_PASSAGE": 0,
+    "CLAIM_UNSUPPORTED_BY_PASSAGE": 0,
+    "CITATION_METADATA_INVALID": 0,
+    "CITATION_PASSAGE_UNSUPPORTIVE": 0,
+    "ABSTENTION_FALSE_REFUSAL": 0,
+    "ABSTENTION_MISSED_HALLUCINATED_ANSWER": 0,
+    "COMPARISON_FALSE_CONFLICT": 0,
+    "TIMELINE_DATE_MISATTRIBUTION": 0,
+    "PROVIDER_TIMEOUT_OR_DEGRADED": 0
+  },
+  "issue_taxonomy_counts": {
+    "UNSUPPORTED_LEGAL_CLAIM": 0,
+    "IR_IRRELEVANT_PASSAGE": 0,
+    "CLAIM_UNSUPPORTED_BY_PASSAGE": 0,
+    "CITATION_METADATA_INVALID": 0,
+    "CITATION_PASSAGE_UNSUPPORTIVE": 0,
+    "ABSTENTION_FALSE_REFUSAL": 0,
+    "ABSTENTION_MISSED_HALLUCINATED_ANSWER": 0,
+    "COMPARISON_FALSE_CONFLICT": 0,
+    "TIMELINE_DATE_MISATTRIBUTION": 0,
+    "PROVIDER_TIMEOUT_OR_DEGRADED": 0
+  },
+  "issue_taxonomy_definitions": {
+    "IR_IRRELEVANT_PASSAGE": "Retrieved passage did not address the queried legal issue or statute.",
+    "CLAIM_UNSUPPORTED_BY_PASSAGE": "Generated legal claim lacks evidentiary foundation in cited passage.",
+    "CITATION_METADATA_INVALID": "Citation text or court/year/page metadata does not resolve to an authoritative report.",
+    "CITATION_PASSAGE_UNSUPPORTIVE": "Citation resolves to valid case, but the specific excerpt does not prove the claim.",
+    "ABSTENTION_FALSE_REFUSAL": "System refused to answer despite indexed authoritative evidence.",
+    "ABSTENTION_MISSED_HALLUCINATED_ANSWER": "System generated an answer for an unanswerable or false-premise question.",
+    "COMPARISON_FALSE_CONFLICT": "System reported judicial conflict where precedents are harmonious or distinguishable.",
+    "TIMELINE_DATE_MISATTRIBUTION": "Event date misattributed or confused with judgment pronouncement date.",
+    "PROVIDER_TIMEOUT_OR_DEGRADED": "LLM API provider failure, rate limit, or network disconnection."
+  },
+  "triage_sla_tracking": {
+    "target_sla_hours": 72,
+    "pending_items_count": 0,
+    "sla_breaches_count": 0,
+    "triaged_count": 0,
+    "sla_compliance_rate": 1.0,
+    "status": "COMPLIANT"
+  }
+}

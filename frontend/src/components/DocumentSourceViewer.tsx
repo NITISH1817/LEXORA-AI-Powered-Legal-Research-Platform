@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText, Search, ArrowLeft, Loader2, ChevronLeft, ChevronRight,
-  Menu, X, FileWarning
+  X, FileWarning
 } from 'lucide-react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem('token') || localStorage.getItem('access_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 

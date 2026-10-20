@@ -25,6 +25,7 @@ class User(Base):
     last_login_at = Column(DateTime, nullable=True)
     
     sessions = relationship("ResearchSession", back_populates="user")
+    collections = relationship("ResearchCollection", back_populates="user")
 
 class Case(Base):
     __tablename__ = "cases"
@@ -177,6 +178,13 @@ class CaseEvent(Base):
     supporting_text = Column(Text)
     verification_status = Column(String, default="needs_review") # accepted, rejected, needs_review
     
+    # Phase 7 additions
+    confidence = Column(Float, default=1.0)
+    is_allegation = Column(Boolean, default=False)
+    attribution_status = Column(String, default="ESTABLISHED") # ESTABLISHED, ALLEGATION, DISPUTED
+    start_date = Column(String, nullable=True)
+    end_date = Column(String, nullable=True)
+    
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
@@ -293,6 +301,7 @@ class ResearchSession(Base):
     cases = relationship("ResearchCase", back_populates="session", cascade="all, delete-orphan")
     evidence = relationship("ResearchEvidence", back_populates="session", cascade="all, delete-orphan")
     notes = relationship("ResearchNote", back_populates="session", cascade="all, delete-orphan")
+    queries = relationship("ResearchQuery", back_populates="session", cascade="all, delete-orphan")
 
 class ResearchCase(Base):
     __tablename__ = "research_cases"
@@ -338,4 +347,7 @@ class AuditLog(Base):
     ip_address = Column(String, nullable=True)
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     metadata_info = Column(String, nullable=True)
+
+# Phase 10: Import document_intel models to register with Base metadata
+import backend.models.document_intel  # noqa: F401
 

@@ -63,6 +63,10 @@ def _stream_pages(file_path: str) -> Generator[Dict, None, None]:
         raise ValueError(f"Could not open PDF: {e}") from e
 
     try:
+        if doc.is_encrypted:
+            raise ValueError("PDF is encrypted / password protected.")
+        if len(doc) == 0:
+            raise ValueError("PDF document contains no pages.")
         for page_num in range(len(doc)):
             page = doc.load_page(page_num)
             raw_text = page.get_text("text")

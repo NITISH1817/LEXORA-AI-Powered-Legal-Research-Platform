@@ -1,124 +1,404 @@
-# LEXORA
-## AI-Powered Legal Intelligence & Research Platform
+# ⚖️ LEXORA — AI-Powered Legal Intelligence & Research Platform
 
-A world-class, production-ready AI Legal Intelligence Platform engineered for Commercial Courts and Government Digital Platforms. Lexora transforms raw legal documents into deeply structured, actionable intelligence.
+[![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-19.0-61DAFB.svg?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Tests](https://img.shields.io/badge/Tests-191%20Passed-brightgreen.svg)](https://pytest.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 Core Features
+> **LEXORA** is an enterprise-grade, evidence-grounded legal research and judicial intelligence platform engineered for commercial courts, litigation teams, and legal tech infrastructures. It transforms voluminous, unstructured case law and statutory documents into structured, cited, and verifiable intelligence without LLM hallucination.
 
-- **Hybrid Reciprocal Rank Fusion (RRF) Retrieval**: Fuses dense vector embeddings (ChromaDB) with lexical BM25 algorithms, guaranteeing that exact statutory references and semantic legal concepts are both surfaced with high precision.
-- **Cross-Encoder Reranking**: Re-ranks the fused retrieval results through a dedicated Cross-Encoder model, pruning false positives before generating the final prompt context.
-- **Evidence-Grounded RAG**: Employs constrained LLM schemas to strictly map every generated claim to a `[Source X]`, drastically reducing AI hallucinations in critical legal workflows.
-- **Automated Citation Intelligence**: Extracts and classifies citation networks using Regex + LLMs, automatically categorizing relationships as `FOLLOWS`, `DISTINGUISHES`, or `OVERRULES`.
-- **Lexora AI Evaluation Framework**: An offline adversarial evaluation suite that systematically tests Retrieval metrics (Recall@K, MRR) and RAG generation against prompt injection, date hallucination, and missing evidence.
-- **Unified Legal Research Workspace**: A persistent, stateful research environment allowing users to save cases, capture Factual and Procedural evidence, take notes, and compare authorities within a single session.
-- **Enterprise-Grade Security**: JWT-based Authentication, Role-Based Access Control (RBAC), strict Research Session isolation, and an integrated Audit Logging framework to track security-relevant actions.
-- **AI Research Brief Generation**: Automatically synthesizes saved research sessions into structured, Markdown-based Research Briefs, heavily grounded with direct citations to the extracted context (e.g. `[Case A - p. 12]`).
-- **Legal Timeline & Procedural History Engine**: Automatically constructs interactive chronological timelines strictly separating Factual background events from Procedural history, carefully preserving approximate dates without hallucination.
-- **Citation Intelligence & Precedent Graph**: Automatically extracts incoming and outgoing citations from judgments, mapping specific relationships (`FOLLOWS`, `DISTINGUISHES`, `CITES`) complete with the exact supporting passage as evidence.
-- **Interactive Network Visualization**: A custom-built dependency-free interactive SVG Graph allowing researchers to instantly traverse Precedent Authority Networks and drill down into the extracted evidence of legal conflicts.
-- **Multi-Case Comparative Intelligence**: Select 2 to 5 cases and perform an evidence-grounded comparative analysis. The AI matrix normalizes legal concepts across cases, systematically compares Facts, Issues, Arguments, and Principles, and strictly detects Potential Tensions without hallucinating conflict.
-- **Case Intelligence Engine**: Automatically parses 100-page judgments to extract core Facts, Procedural History, Issues, Reasoning, Decisions, and discrete Legal Principles.
-- **Advanced Frontend Visualizations**: Features a dynamic React workspace with Framer Motion animations, an interactive SVG Precedent Citation Graph, and a chronological Procedural Timeline.
-- **Enterprise Security**: Enforces rigorous OAuth2 JWT authentication and bcrypt password hashing across the entire FastAPI stack.
+---
 
-## 🏗️ Architecture
+## 📑 Table of Contents
 
-### Hybrid Search Architecture
+- [Executive Overview](#-executive-overview)
+- [Key Features](#-key-features)
+- [System Architecture](#-system-architecture)
+- [Repository Structure](#-repository-structure)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [1. Backend Setup](#1-backend-setup)
+  - [2. Frontend Setup](#2-frontend-setup)
+  - [3. Docker Compose Deployment](#3-docker-compose-deployment)
+- [Configuration & Environment Variables](#-configuration--environment-variables)
+- [API Reference](#-api-reference)
+- [Evaluation, Benchmarks & Safety](#-evaluation-benchmarks--safety)
+- [Testing & Quality Assurance](#-testing--quality-assurance)
+- [Deployment & Production Runbook](#-deployment--production-runbook)
+- [Contributing & License](#-contributing--license)
+
+---
+
+## 🎯 Executive Overview
+
+Modern legal research demands absolute accuracy: hallucinated citations, distorted judicial holdings, or missing statutory conditions can compromise critical proceedings. LEXORA solves this challenge through:
+
+1. **Strict Evidence-Grounding**: Every assertion generated by the LLM is deterministically bound to direct source citations with page and paragraph granularity (`[Source X - p. Y]`). If supporting evidence is absent from retrieved context, the system strictly abstains rather than inventing answers.
+2. **Hybrid RRF + Cross-Encoder Retrieval**: Merges dense vector embeddings (ChromaDB) with sparse lexical search (BM25Okapi) using Reciprocal Rank Fusion ($k=60$), re-ranked with a Cross-Encoder to prioritize legal relevance and precise statutory citations.
+3. **Structured Judicial Intelligence**: Automates extraction of procedural histories, fact patterns, legal issues, reasoning frameworks, and discrete legal principles across multi-hundred-page judgments.
+4. **Multi-Case Comparative Analytics**: Normalizes legal concepts across 2 to 5 judgments simultaneously, identifying synergies, factual distinctions, and legal tensions.
+5. **Interactive Precedent Graph**: Automatically maps incoming and outgoing citation relationships (`FOLLOWS`, `DISTINGUISHES`, `OVERRULES`, `CITES`) with supporting passage evidence on an interactive canvas.
+
+---
+
+## 🚀 Key Features
+
+### 🔍 1. Hybrid Reciprocal Rank Fusion (RRF) Retrieval
+- Combines semantic vector similarity with keyword-precise BM25 search.
+- Solves the legal vocabulary mismatch problem: dense models capture conceptual intent, while BM25 ensures exact statutory sections, case names, and citations are never missed.
+- Reranks top-$K$ candidates through a Cross-Encoder scoring model before prompt construction.
+
+### 🛡️ 2. Evidence-Grounded RAG & Anti-Hallucination Guardrails
+- **Hard Source Attribution**: Every synthesized claim maps to a verified source chunk with verbatim quotes.
+- **Fail-Closed Abstention**: Explicitly reports *"Insufficient Evidence"* when retrieved documents do not conclusively address the inquiry.
+- **Context Integrity Verification**: Prevents prompt injection and out-of-domain knowledge contamination.
+
+### 📊 3. Case Intelligence & Structural Decomposition
+- Ingests PDF, DOCX, and TXT judgments and briefs.
+- Deconstructs complex opinions into discrete sections:
+  - **Factual Background**
+  - **Procedural History**
+  - **Core Legal Issues**
+  - **Judicial Reasoning**
+  - **Ratio Decidendi / Legal Principles**
+  - **Final Disposition**
+
+### ⏳ 4. Chronological Timeline & Procedural History Engine
+- Automatically segregates substantive underlying events from courtroom procedural milestones.
+- Normalizes relative and absolute dates into an interactive, filterable chronological timeline.
+
+### 🕸️ 5. Precedent Network & Citation Intelligence
+- Discovers case citations using automated regular expression patterns combined with LLM relation extraction.
+- Classifies precedent treatment: `FOLLOWS`, `DISTINGUISHES`, `OVERRULES`, or `CITES`.
+- Renders dynamic SVG graph visualizations with interactive node exploration and citation evidence extraction.
+
+### ⚖️ 6. Multi-Case Comparative Intelligence
+- Compare 2 to 5 cases side-by-side in a comparative matrix.
+- Aligns legal issues across disparate matters to identify consensus, divergence, and jurisdiction-specific nuances.
+
+### 📝 7. Research Workspace & Brief Synthesis
+- Stateful, session-based research environment.
+- Save cases, capture factual and procedural evidence, attach analyst notes, and generate polished, publication-ready Markdown Research Briefs.
+
+### 🔒 8. Enterprise Security & Audit Logging
+- Role-Based Access Control (RBAC): `ADMIN`, `RESEARCHER`, `VIEWER`.
+- Secure JWT authentication with bcrypt password hashing.
+- Comprehensive audit trails tracking case access, exports, and document uploads.
+
+---
+
+## 🏗️ System Architecture
 
 ```text
-Query
- ↓
-Semantic Retrieval + BM25
- ↓
-Fusion
- ↓
-Reranking
- ↓
-Research Relevance
-```
-### Evidence-Grounded RAG Architecture
-
-```text
-Query
- ↓
-Hybrid Retrieval
- ↓
-Reranking
- ↓
-Context Construction
- ↓
-Gemini
- ↓
-Evidence Verification
- ↓
-Citations
-```
-
-**Limitations**: 
-- The system heavily relies on retrieving the correct chunks. If the Hybrid Retrieval engine misses the relevant authority, the system will accurately report "Insufficient evidence" rather than attempt to guess the answer.
-- Evidence Verification guarantees that the citation exists in the context window, but the system may still occasionally misinterpret the legal significance of the text if it is highly ambiguous.
-
-```mermaid
-graph TD
-    Client[React + TypeScript + Tailwind Frontend] -->|Auth Bearer JWT| API[FastAPI Backend]
-    
-    subgraph Ingestion Pipeline
-        API --> PDF[NLTK Semantic Chunker]
-        PDF --> SQLite[(Relational DB)]
-        PDF --> Embed[Gemini Embedding]
-        Embed --> Chroma[(ChromaDB Vector Store)]
-        PDF --> Citation[Citation Extractor]
-    end
-    
-    subgraph Intelligence Engine
-        API --> Search[Query Intent + Hybrid RRF]
-        Search --> BM25[(Lexical Index)]
-        Search --> Chroma
-        Search --> Rerank[Cross-Encoder Reranker]
-        Rerank --> Gen[Evidence-Grounded Generator]
-        Gen --> Client
-    end
+                                  ┌───────────────────────────┐
+                                  │   React 19 + TypeScript   │
+                                  │   Tailwind + Framer UI    │
+                                  └─────────────┬─────────────┘
+                                                │ REST / Bearer JWT
+                                                ▼
+                                  ┌───────────────────────────┐
+                                  │      FastAPI Backend      │
+                                  │ (Auth, RBAC, Rate Limiter)│
+                                  └─────────────┬─────────────┘
+                                                │
+         ┌──────────────────────────────────────┼──────────────────────────────────────┐
+         ▼                                      ▼                                      ▼
+┌──────────────────┐                  ┌──────────────────┐                  ┌──────────────────┐
+│ Ingestion Engine │                  │  Hybrid Search   │                  │ Intelligence Hub │
+├──────────────────┤                  ├──────────────────┤                  ├──────────────────┤
+│ • PDF/DOCX Parse │                  │ • Dense (Chroma) │                  │ • Evidence RAG   │
+│ • Semantic Chunk │                  │ • Lexical (BM25) │                  │ • Case Summary   │
+│ • Citation Regex │                  │ • RRF Fusion     │                  │ • Timeline Build │
+│ • Metadata Store │                  │ • Cross-Encoder  │                  │ • Graph Network  │
+└────────┬─────────┘                  └────────┬─────────┘                  │ • Multi-Compare  │
+         │                                     │                            └────────┬─────────┘
+         ▼                                     ▼                                     ▼
+┌──────────────────┐                  ┌──────────────────┐                  ┌──────────────────┐
+│ SQLite/Postgres  │                  │ ChromaDB Vectors │                  │ Google Gemini LLM│
+│ Relational Store │                  │ Multi-Collection │                  │ Grounded Prompts │
+└──────────────────┘                  └──────────────────┘                  └──────────────────┘
 ```
 
-## 🛠️ Tech Stack
-- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide React
-- **Backend**: Python, FastAPI, SQLAlchemy
-- **Database**: SQLite (Relational Metadata), ChromaDB (Vector Search)
-- **AI/ML**: Google Gemini 1.5 (Generation & Embedding), NLTK (Semantic Chunking), Cross-Encoder (Reranking)
-- **Security**: python-jose (JWT), passlib (bcrypt)
+---
 
-## 📦 Local Setup Instructions
+## 📁 Repository Structure
 
-### 1. Clone & Configure
+```
+AI-Legal-Research-System/
+├── .github/workflows/          # CI/CD Workflows (test execution, linting, build)
+├── backend/                    # FastAPI Backend Application
+│   ├── models/                 # SQLAlchemy ORM Domain Models
+│   ├── routes/                 # API Endpoint Routers (auth, cases, compare, rag, etc.)
+│   ├── schemas/                # Pydantic v2 Request/Response Schemas
+│   ├── services/               # Core Domain Services
+│   │   ├── auth_service.py     # Authentication & Token Management
+│   │   ├── bm25_service.py     # Lexical Search Engine
+│   │   ├── citation_service.py # Citation Pattern Extraction
+│   │   ├── compare_service.py  # Multi-Case Comparative Intelligence
+│   │   ├── document_service.py # Document Upload & Storage
+│   │   ├── embedding_service.py# Vector Embedding Pipeline
+│   │   ├── intelligence_service.py # Judicial Analysis & Extraction
+│   │   ├── monitoring_service.py # Performance & Audit Metrics
+│   │   ├── precedent_service.py# Citation Graph Construction
+│   │   ├── rag_service.py      # Grounded RAG Generation
+│   │   ├── search_service.py   # Hybrid RRF Search Orchestrator
+│   │   ├── timeline_service.py # Timeline & Procedural Ordering
+│   │   └── vector_service.py   # ChromaDB Vector Operations
+│   ├── tests/                  # 191 Automated Unit & Integration Tests
+│   ├── app.py                  # FastAPI Application Entrypoint
+│   ├── config.py               # Pydantic Settings Configuration
+│   ├── database.py             # Database Engine & Session Factory
+│   ├── security.py             # Password Hashing & JWT Verification
+│   └── requirements.txt        # Backend Python Dependencies
+├── frontend/                   # Modern React + Vite Single-Page Application
+│   ├── src/
+│   │   ├── api/                # Axios Client & API Endpoints
+│   │   ├── components/         # Modular UI Components
+│   │   │   ├── auth/           # Login, Registration & Route Guards
+│   │   │   ├── CaseIntelligence.tsx      # Structural Judgment Viewer
+│   │   │   ├── CaseTimeline.tsx          # Interactive Procedural Timeline
+│   │   │   ├── ComparativeIntelligence.tsx # Multi-Case Comparison Matrix
+│   │   │   ├── DocumentDetail.tsx        # Document Metadata & Reader
+│   │   │   ├── DocumentIntelligence.tsx  # Document Ingestion Dashboard
+│   │   │   ├── DocumentSourceViewer.tsx  # Grounded Source Context Viewer
+│   │   │   ├── EvaluationDashboard.tsx   # Model Metrics & Benchmarks
+│   │   │   ├── PrecedentGraph.tsx        # Dynamic SVG Precedent Graph
+│   │   │   └── ResearchWorkspace.tsx     # Central Legal Research Workbench
+│   │   ├── context/            # React Auth & State Contexts
+│   │   ├── types/              # TypeScript Interface Definitions
+│   │   ├── App.tsx             # Root Routing & Protected Routes
+│   │   └── main.tsx            # Application Bootstrapper
+│   ├── Dockerfile              # Production Multi-Stage Frontend Docker Build
+│   ├── nginx.conf              # Nginx Production Reverse Proxy Configuration
+│   └── package.json            # Frontend Dependencies & Scripts
+├── evaluation/                 # Benchmark Datasets & Evaluation Gate
+│   ├── datasets/               # Standardized Legal Benchmarks (v1, v2, v3)
+│   ├── evaluator.py            # Automated Accuracy & Hallucination Evaluator
+│   ├── metrics.py              # Precision, Recall@K, MRR & Faithfulness
+│   ├── regression_gate.py      # Automated CI Release Gate
+│   ├── retrieval_optimizer.py  # Hyperparameter Grid Tuning (RRF weights, Top-K)
+│   └── review_workflow.py      # Human Adjudication Pipeline
+├── scripts/                    # Operational & Maintenance Utilities
+│   ├── backup.py               # Full State Database & Storage Backup
+│   ├── restore.py              # Point-in-Time Restoration Script
+│   ├── pilot_acceptance_test.py# Production Smoke & Acceptance Validator
+│   └── submit_human_review.py  # Review Queue Ingestion
+├── docker-compose.yml          # Containerized Multi-Service Deployment
+├── DEPLOYMENT_RUNBOOK.md       # Production Deployment & Operational Runbook
+├── pytest.ini                  # Pytest Configuration
+└── README.md                   # Project Documentation
+```
+
+---
+
+## 💻 Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, Framer Motion |
+| **Backend API** | Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy, Uvicorn |
+| **Databases** | SQLite (Default Dev) / PostgreSQL (Production), ChromaDB (Vector Search) |
+| **Retrieval & AI** | Google Gemini (1.5 Flash / Pro), BM25Okapi, Cross-Encoder Reranker, NLTK |
+| **Security** | Python-Jose (JWT), Passlib / Bcrypt, OAuth2 Password Bearer |
+| **DevOps & QA** | Docker, Docker Compose, Nginx, Pytest, GitHub Actions CI |
+
+---
+
+## ⚡ Getting Started
+
+### Prerequisites
+- **Python**: 3.11 or higher
+- **Node.js**: 20.x or higher (`npm` included)
+- **Git**: Installed and configured
+- **Google Gemini API Key**: [Obtain from Google AI Studio](https://aistudio.google.com/)
+
+---
+
+### 1. Backend Setup
+
 ```bash
+# 1. Clone repository
 git clone https://github.com/NITISH1817/LEXORA-AI-Powered-Legal-Research-Platform.git
 cd LEXORA-AI-Powered-Legal-Research-Platform
-```
 
-### 2. Backend Setup
-```bash
-cd backend
+# 2. Create and activate a virtual environment
 python -m venv venv
-source venv/bin/activate  # Or `venv\Scripts\activate` on Windows
-pip install -r requirements.txt
+
+# Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+# Linux / macOS:
+source venv/bin/activate
+
+# 3. Install backend dependencies
+pip install -r backend/requirements.txt
+
+# 4. Configure environment variables
+cp .env.production.example backend/.env
+# Edit backend/.env and supply your GEMINI_API_KEY and a secure SECRET_KEY
+
+# 5. Start the FastAPI development server
+uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Create a `.env` file in the `backend/` directory (see `.env.example` for details):
-```env
-GEMINI_API_KEY=your_key_here
-SECRET_KEY=your_secure_random_string
-```
+The interactive API documentation is available at `http://localhost:8000/docs`.
 
-Run the API:
+---
+
+### 2. Frontend Setup
+
 ```bash
-uvicorn app:app --reload --port 8000
-```
-
-### 3. Frontend Setup
-```bash
+# 1. Navigate to frontend directory
 cd frontend
+
+# 2. Install dependencies
 npm install
+
+# 3. Start Vite development server
 npm run dev
 ```
 
-Navigate to `http://localhost:5173`. You must register an account and login to access the workspace.
+Open `http://localhost:5173` in your browser. Register an initial account to access the workspace.
+
+---
+
+### 3. Docker Compose Deployment
+
+To run the complete production-ready stack in containers:
+
+```bash
+# Set your environment variables
+export GEMINI_API_KEY="your-api-key"
+export SECRET_KEY="your-random-32-byte-hex-string"
+
+# Launch backend, frontend, and vector database
+docker-compose up --build -d
+```
+
+- **Frontend Application**: `http://localhost:3000`
+- **Backend API**: `http://localhost:8000`
+- **API Documentation**: `http://localhost:8000/docs`
+
+---
+
+## ⚙️ Configuration & Environment Variables
+
+Configure the following keys in `backend/.env`:
+
+| Variable | Required | Default | Description |
+| :--- | :---: | :--- | :--- |
+| `GEMINI_API_KEY` | **Yes** | — | Google Gemini API key for embeddings and grounded synthesis |
+| `SECRET_KEY` | **Yes** | — | Cryptographic secret key for signing JWT tokens |
+| `ALGORITHM` | No | `HS256` | JWT signing algorithm |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `1440` (24h) | JWT session expiration window in minutes |
+| `DATABASE_URL` | No | `sqlite:///./legal_research.db` | SQLAlchemy connection URI (PostgreSQL or SQLite) |
+| `CHROMA_PERSIST_DIRECTORY` | No | `./chroma_db` | Persistent vector store directory |
+| `STORAGE_DIRECTORY` | No | `./storage` | Uploaded document storage root |
+| `CORS_ORIGINS` | No | `http://localhost:5173,...` | Comma-separated list of allowed frontend origins |
+| `RRF_K` | No | `60` | Reciprocal Rank Fusion constant ($k$) |
+| `MAX_UPLOAD_SIZE_MB` | No | `50` | Maximum file size for PDF/DOCX ingestion |
+
+Frontend configuration via `frontend/.env`:
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+---
+
+## 📡 API Reference
+
+| Domain | Method | Endpoint | Description | Auth |
+| :--- | :---: | :--- | :--- | :---: |
+| **Auth** | `POST` | `/api/auth/register` | Register new user account | Public |
+| **Auth** | `POST` | `/api/auth/token` | Authenticate & retrieve JWT bearer token | Public |
+| **Auth** | `GET` | `/api/auth/me` | Fetch authenticated user profile | Required |
+| **Documents** | `POST` | `/api/documents/upload` | Ingest PDF/DOCX judgment with chunking | Required |
+| **Documents** | `GET` | `/api/documents` | List uploaded documents with status | Required |
+| **Documents** | `GET` | `/api/documents/{id}` | Retrieve document metadata & chunks | Required |
+| **Research** | `POST` | `/api/research/query` | Perform grounded RAG search with citations | Required |
+| **Research** | `GET` | `/api/research/sessions` | List persistent research workspaces | Required |
+| **Research** | `POST` | `/api/research/sessions` | Create new research workspace session | Required |
+| **Research** | `POST` | `/api/research/sessions/{id}/brief` | Synthesize markdown legal research brief | Required |
+| **Cases** | `GET` | `/api/cases/{id}/intelligence` | Extract structured legal reasoning & facts | Required |
+| **Timeline** | `GET` | `/api/cases/{id}/timeline` | Generate chronological procedural timeline | Required |
+| **Precedents**| `GET` | `/api/cases/{id}/precedents` | Extract citation network & relations | Required |
+| **Compare** | `POST` | `/api/compare` | Multi-case comparison matrix (2-5 cases) | Required |
+| **Evaluation**| `GET` | `/api/evaluation/metrics` | Retrieve offline benchmark metrics | Admin |
+| **System** | `GET` | `/api/health` | Service health, DB, and Chroma status | Public |
+
+---
+
+## 🧪 Evaluation, Benchmarks & Safety
+
+LEXORA incorporates an adversarial evaluation framework specifically designed to validate legal precision:
+
+```bash
+# Execute evaluation benchmark suite
+python -m evaluation.regression_gate --dataset evaluation/datasets/legal_benchmark_v3.json
+```
+
+### Measured Safety Dimensions:
+- **Recall@K & MRR**: Evaluates whether binding statutory authorities and precedent are captured in top retrieval slots.
+- **Evidence Faithfulness Score**: Measures claim-level overlap with extracted context passages; flags ungrounded assertions.
+- **Citation Precision**: Verifies that every `[Source X]` reference strictly matches an ingested chunk.
+- **Adversarial Resilience**: Defends against contradictory facts, misleading legal issues, and prompt injection attempts.
+
+---
+
+## 🔬 Testing & Quality Assurance
+
+LEXORA is verified by an automated test suite containing **191 unit, integration, and security tests**:
+
+```bash
+# Run complete test suite
+pytest backend/tests -v
+
+# Run with test coverage report
+pytest backend/tests --cov=backend --cov-report=term-missing
+```
+
+### Covered Test Categories:
+- **Phase 3**: Contracts, Schemas & Pydantic Validation
+- **Phase 4**: Ingestion Pipeline, Semantic Chunking & Storage
+- **Phase 5**: Evidence-Grounded RAG & Source Attribution
+- **Phase 6**: Multi-Case Comparison & Precedent Graph Construction
+- **Phase 7**: Procedural & Factual Timeline Generation
+- **Phase 8**: Security, RBAC, JWT Hardening & Audit Trails
+- **Phase 9–13**: Evaluation Framework, Benchmark Datasets & Regression Gates
+- **Phase 14–16**: Adjudication Workflows, Human Review Gates & Pilot Acceptance
+
+---
+
+## 🚢 Deployment & Production Runbook
+
+For complete operational and disaster recovery protocols, consult [DEPLOYMENT_RUNBOOK.md](file:///d:/AI-Legal-Research-System/DEPLOYMENT_RUNBOOK.md).
+
+### Quick Production Checklist:
+1. **Security**: Ensure `SECRET_KEY` is a cryptographically strong 32-byte hex token.
+2. **TLS/SSL**: Terminate SSL via Nginx, Traefik, or Cloudflare; set `CORS_ORIGINS` to authorized domains only.
+3. **Database**: Migrate from SQLite to PostgreSQL (`postgresql+psycopg2://user:pass@host:5432/lexora`).
+4. **Backups**: Schedule automated daily backups via `python scripts/backup.py`.
+5. **Monitoring**: Connect health checks to `/api/health` with automated alerts on persistent failures.
+
+---
+
+## 📜 Contributing & License
+
+Contributions, issues, and feature requests are welcome!
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/LegalFeature`)
+3. Commit your Changes (`git commit -m 'Add LegalFeature'`)
+4. Push to the Branch (`git push origin feature/LegalFeature`)
+5. Open a Pull Request
+
+Distributed under the **MIT License**. See `LICENSE` for more information.
+
+---
+
+<p align="center">
+  <b>LEXORA</b> — Engineering Precision into Digital Legal Intelligence.
+</p>

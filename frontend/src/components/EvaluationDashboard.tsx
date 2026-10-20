@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, ShieldCheck, Zap, AlertTriangle, CheckCircle, Search, FileText } from 'lucide-react';
+import { Activity, ShieldCheck, AlertTriangle, CheckCircle, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function EvaluationDashboard() {
@@ -13,7 +13,7 @@ export default function EvaluationDashboard() {
 
   const fetchResults = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/evaluation/latest');
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/evaluation/latest`);
       setData(res.data);
     } catch (e) {
       console.error(e);
@@ -79,7 +79,16 @@ export default function EvaluationDashboard() {
   );
 }
 
-function MetricRow({label, value, threshold, isPercent=false, suffix="", inverse=false}: any) {
+interface MetricRowProps {
+  label: string;
+  value?: number;
+  threshold: number;
+  isPercent?: boolean;
+  suffix?: string;
+  inverse?: boolean;
+}
+
+function MetricRow({ label, value = 0, threshold, isPercent = false, suffix = "", inverse = false }: MetricRowProps) {
   const displayVal = isPercent ? `${Math.round(value * 100)}%` : `${Math.round(value)}${suffix}`;
   
   let failed = false;

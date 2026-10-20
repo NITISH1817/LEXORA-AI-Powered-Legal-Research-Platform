@@ -145,9 +145,48 @@ def validate_document(
                 detail="File content does not match the declared file type."
             )
 
-    # 4. Basic corruption check for PDF
-    if ext == "pdf" and not file_bytes[:4] == b"%PDF":
-        raise HTTPException(status_code=422, detail="File appears to be a corrupted PDF.")
+    # 4. Integrity and corruption checks
+    if ext == "pdf":
+        if not file_bytes[:4] == b"%PDF":
+            raise HTTPException(status_code=422, detail="File appears to be a corrupted PDF.")
+        try:
+            import fitz
+            pdf_doc = fitz.open(stream=file_bytes, filetype="pdf")
+            if pdf_doc.is_encrypted:
+                pdf_doc.close()
+                raise HTTPException(
+                    status_code=422,
+                    detail="Encrypted or password-protected PDFs are not supported."
+                )
+            if len(pdf_doc) == 0:
+                pdf_doc.close()
+                raise HTTPException(status_code=422, detail="PDF document contains no pages.")
+            pdf_doc.close()
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=422, detail="File appears to be a corrupted PDF.")
+    elif ext == "docx":
+        import zipfile
+        import io
+        try:
+            with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
+                if "word/document.xml" not in z.namelist():
+                    raise HTTPException(status_code=422, detail="File appears to be a corrupted DOCX.")
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=422, detail="File appears to be a corrupted DOCX.")
+    elif ext == "txt":
+        if not file_bytes.strip():
+            raise HTTPException(status_code=400, detail="Document appears to be empty.")
+        try:
+            file_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            try:
+                file_bytes.decode("latin-1")
+            except Exception:
+                raise HTTPException(status_code=422, detail="Could not decode text file.")
 
     # 5. Sanitize filename for display title
     sanitized = _sanitize_filename(filename)
@@ -165,15 +204,23 @@ def calculate_file_hash(file_bytes: bytes) -> str:
     return hashlib.sha256(file_bytes).hexdigest()
 
 
-def find_duplicate_document(db: Session, file_hash: str) -> Optional[int]:
+def find_duplicate_document(db: Session, file_hash: str, owner_id: Optional[int] = None) -> Optional[int]:
     """
-    Check if a document with this hash already exists.
+    Check if a document with this hash already exists for this owner.
     Returns existing document_id or None.
     """
     from backend.models.document_intel import DocumentFingerprint
-    fp = db.query(DocumentFingerprint).filter(
+    from backend.models.domain import Document
+
+    query = db.query(DocumentFingerprint).join(
+        Document, DocumentFingerprint.document_id == Document.id
+    ).filter(
         DocumentFingerprint.hash_sha256 == file_hash
-    ).first()
+    )
+    if owner_id is not None:
+        query = query.filter(Document.owner_id == owner_id)
+
+    fp = query.first()
     return fp.document_id if fp else None
 
 

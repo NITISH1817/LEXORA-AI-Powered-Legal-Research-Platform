@@ -1,0 +1,424 @@
+[
+  {
+    "query_id": "bench_093",
+    "question": "Trace the evolution of Article 21 from literal procedure in A.K. Gopalan to just, fair, and reasonable procedure in Maneka Gandhi and privacy in Puttaswamy.",
+    "split": "dev",
+    "category": "MULTI_PASSAGE_SYNTHESIS",
+    "risk_score": 7.3,
+    "priority_tier": "PRIORITY_1_CRITICAL",
+    "risk_factors": [
+      "OVERRULED_AUTHORITY_RISK (+2.0)",
+      "SUBMISSION_VS_HOLDING_RISK (+1.5)"
+    ],
+    "current_status": "PENDING_HUMAN_LEGAL_REVIEW",
+    "legal_domain": "Constitutional Law & Human Rights",
+    "court_level": "Supreme Court of India",
+    "jurisdiction": "Supreme Court of India / Indian Union",
+    "procedural_posture_and_judgment_date": "Gopalan decided May 19, 1950 (AIR 1950 SC 27); Maneka Gandhi decided Jan 25, 1978 ((1978) 1 SCC 248); Puttaswamy decided Aug 24, 2017 ((2017) 10 SCC 1).",
+    "proposed_expected_answer": "In A.K. Gopalan (1950), Article 21 was given a literal interpretation where 'procedure established by law' meant any state-enacted procedure. In Maneka Gandhi (1978), the court overruled Gopalan, holding that procedure must be just, fair, and reasonable. Finally, in Puttaswamy (2017), a nine-judge bench elevated privacy to a fundamental right within Article 21 subject to a strict three-fold proportionality test.",
+    "required_citations": [
+      "A.K. Gopalan v. State of Madras",
+      "Maneka Gandhi v. Union of India",
+      "Puttaswamy v. Union of India"
+    ],
+    "authoritative_sources": [
+      {
+        "chunk_id": "chunk_gopalan_01",
+        "case_name": "A.K. Gopalan v. State of Madras",
+        "citation": "(1950) SCR 88",
+        "court": "Supreme Court of India",
+        "year": 1950,
+        "excerpt": "In A.K. Gopalan v. State of Madras (1950) SCR 88, a six-judge bench of the Supreme Court interpreted 'procedure established by law' in Article 21 literally as procedure prescribed by legislative enactment. The court held that fundamental rights in Part III operate in distinct watertight compartments (Articles 19 and 21 were mutually exclusive) and rejected substantive due process. This rigid doctrine was subsequently overruled in R.C. Cooper (1970) and Maneka Gandhi (1978)."
+      },
+      {
+        "chunk_id": "chunk_maneka_01",
+        "case_name": "Maneka Gandhi v. Union of India",
+        "citation": "(1978) 1 SCC 248",
+        "court": "Supreme Court of India",
+        "year": 1978,
+        "excerpt": "In Maneka Gandhi v. Union of India (1978) 1 SCC 248, the Supreme Court overruled the narrow interpretation of Article 21 from A.K. Gopalan (1950), ruling that 'procedure established by law' must not be arbitrary, oppressive, or fanciful; it must be just, fair, and reasonable. This introduced substantive due process principles into Indian constitutional law."
+      },
+      {
+        "chunk_id": "chunk_putta_01",
+        "case_name": "Puttaswamy v. Union of India",
+        "citation": "(2017) 10 SCC 1",
+        "court": "Supreme Court of India",
+        "year": 2017,
+        "excerpt": "In Justice K.S. Puttaswamy (Retd.) v. Union of India (2017) 10 SCC 1, a unanimous nine-judge Constitution Bench held that the Right to Privacy is a fundamental right guaranteed under Article 21 and Part III of the Constitution. The court expressly overruled previous judgments in M.P. Sharma (1954) and Kharak Singh (1964) to the extent that they held privacy was not a constitutionally protected right."
+      },
+      {
+        "chunk_id": "chunk_putta_02",
+        "case_name": "Puttaswamy v. Union of India",
+        "citation": "(2017) 10 SCC 1",
+        "court": "Supreme Court of India",
+        "year": 2017,
+        "excerpt": "In Puttaswamy, the court established a strict three-fold proportionality test for any state encroachment upon privacy: (i) legality (existence of a law), (ii) legitimate state aim or need, and (iii) proportionality of the means adopted to the object sought to be achieved, ensuring the measure is the least intrusive option."
+      }
+    ],
+    "potential_contrary_or_overruling_authorities": "A.K. Gopalan literal doctrine overruled in Maneka Gandhi. Silo theory between Articles 14, 19, and 21 rejected.",
+    "abstention_expectation": "MUST NOT ABSTAIN \u2014 Indexed controlling authorities substantiate ratio.",
+    "known_uncertainties_and_reviewer_questions": "Scope of proportionality vs American substantive due process. Application of proportionality across statutory vs executive actions.",
+    "human_verification_checklist": {
+      "source_verified": false,
+      "holding_accurately_extracted": false,
+      "ratio_distinguished_from_obiter": false,
+      "overruled_authorities_flagged": false,
+      "procedural_posture_verified": false,
+      "gold_label_approved": false
+    }
+  },
+  {
+    "query_id": "bench_132",
+    "question": "What was the relationship between Puttaswamy (2017) and Kharak Singh (1964)?",
+    "split": "held_out",
+    "category": "PRECEDENT_RELATIONSHIP",
+    "risk_score": 6.5,
+    "priority_tier": "PRIORITY_1_CRITICAL",
+    "risk_factors": [
+      "OVERRULED_AUTHORITY_RISK (+2.0)",
+      "SUBMISSION_VS_HOLDING_RISK (+1.5)"
+    ],
+    "current_status": "PENDING_HUMAN_LEGAL_REVIEW",
+    "legal_domain": "Constitutional Law & Human Rights",
+    "court_level": "Supreme Court of India",
+    "jurisdiction": "Supreme Court of India / Indian Union",
+    "procedural_posture_and_judgment_date": "Kharak Singh decided Dec 18, 1962 ((1964) 1 SCR 332); Puttaswamy decided Aug 24, 2017 ((2017) 10 SCC 1).",
+    "proposed_expected_answer": "Puttaswamy expressly overruled Kharak Singh to the extent that the majority judgment held that privacy was not a constitutionally protected right, affirming instead the dissent of Subba Rao, J.",
+    "required_citations": [
+      "Puttaswamy (2017)",
+      "Kharak Singh (1964)"
+    ],
+    "authoritative_sources": [
+      {
+        "chunk_id": "chunk_putta_01",
+        "case_name": "Puttaswamy v. Union of India",
+        "citation": "(2017) 10 SCC 1",
+        "court": "Supreme Court of India",
+        "year": 2017,
+        "excerpt": "In Justice K.S. Puttaswamy (Retd.) v. Union of India (2017) 10 SCC 1, a unanimous nine-judge Constitution Bench held that the Right to Privacy is a fundamental right guaranteed under Article 21 and Part III of the Constitution. The court expressly overruled previous judgments in M.P. Sharma (1954) and Kharak Singh (1964) to the extent that they held privacy was not a constitutionally protected right."
+      },
+      {
+        "chunk_id": "chunk_kharak_01",
+        "case_name": "Kharak Singh v. State of U.P.",
+        "citation": "(1964) 1 SCR 332",
+        "court": "Supreme Court of India",
+        "year": 1964,
+        "excerpt": "In Kharak Singh v. State of U.P. (1964) 1 SCR 332, a six-judge bench held that unauthorized domiciliary police visits at night violated personal liberty under Article 21, but the majority rejected the existence of a broader fundamental right to privacy. Subba Rao, J. in his dissenting opinion held that privacy was an integral element of personal liberty."
+      }
+    ],
+    "potential_contrary_or_overruling_authorities": "Majority in Kharak Singh rejecting privacy right expressly overruled; dissent of Subba Rao, J. affirmed.",
+    "abstention_expectation": "MUST NOT ABSTAIN \u2014 Indexed controlling authorities substantiate ratio.",
+    "known_uncertainties_and_reviewer_questions": "Extents to which physical domiciliary surveillance differs from digital metadata surveillance under post-Puttaswamy jurisprudence.",
+    "human_verification_checklist": {
+      "source_verified": false,
+      "holding_accurately_extracted": false,
+      "ratio_distinguished_from_obiter": false,
+      "overruled_authorities_flagged": false,
+      "procedural_posture_verified": false,
+      "gold_label_approved": false
+    }
+  },
+  {
+    "query_id": "bench_131",
+    "question": "What was the relationship between Puttaswamy (2017) and M.P. Sharma (1954)?",
+    "split": "held_out",
+    "category": "PRECEDENT_RELATIONSHIP",
+    "risk_score": 6.5,
+    "priority_tier": "PRIORITY_1_CRITICAL",
+    "risk_factors": [
+      "OVERRULED_AUTHORITY_RISK (+2.0)",
+      "SUBMISSION_VS_HOLDING_RISK (+1.5)"
+    ],
+    "current_status": "PENDING_HUMAN_LEGAL_REVIEW",
+    "legal_domain": "Constitutional Law & Human Rights",
+    "court_level": "Supreme Court of India",
+    "jurisdiction": "Supreme Court of India / Indian Union",
+    "procedural_posture_and_judgment_date": "M.P. Sharma decided Mar 15, 1954 (1954 SCR 1077); Puttaswamy decided Aug 24, 2017 ((2017) 10 SCC 1).",
+    "proposed_expected_answer": "Puttaswamy expressly overruled M.P. Sharma to the extent it held that the Constitution of India does not recognize a fundamental right to privacy.",
+    "required_citations": [
+      "Puttaswamy (2017)",
+      "M.P. Sharma (1954)"
+    ],
+    "authoritative_sources": [
+      {
+        "chunk_id": "chunk_putta_01",
+        "case_name": "Puttaswamy v. Union of India",
+        "citation": "(2017) 10 SCC 1",
+        "court": "Supreme Court of India",
+        "year": 2017,
+        "excerpt": "In Justice K.S. Puttaswamy (Retd.) v. Union of India (2017) 10 SCC 1, a unanimous nine-judge Constitution Bench held that the Right to Privacy is a fundamental right guaranteed under Article 21 and Part III of the Constitution. The court expressly overruled previous judgments in M.P. Sharma (1954) and Kharak Singh (1964) to the extent that they held privacy was not a constitutionally protected right."
+      },
+      {
+        "chunk_id": "chunk_mpsharma_01",
+        "case_name": "M.P. Sharma v. Satish Chandra",
+        "citation": "(1954) SCR 1077",
+        "court": "Supreme Court of India",
+        "year": 1954,
+        "excerpt": "In M.P. Sharma v. Satish Chandra (1954) SCR 1077, an eight-judge bench held that search warrants under Section 96 of the Code of Criminal Procedure did not violate Article 19(1)(f) or Article 20(3) of the Constitution, observing that the Indian Constitution does not recognize an express fundamental right to privacy analogous to the Fourth Amendment of the US Constitution."
+      }
+    ],
+    "potential_contrary_or_overruling_authorities": "M.P. Sharma observation that Indian Constitution excludes right to privacy expressly overruled.",
+    "abstention_expectation": "MUST NOT ABSTAIN \u2014 Indexed controlling authorities substantiate ratio.",
+    "known_uncertainties_and_reviewer_questions": "Interplay between Article 20(3) right against self-incrimination and Article 21 digital device password disclosure compelled by law enforcement.",
+    "human_verification_checklist": {
+      "source_verified": false,
+      "holding_accurately_extracted": false,
+      "ratio_distinguished_from_obiter": false,
+      "overruled_authorities_flagged": false,
+      "procedural_posture_verified": false,
+      "gold_label_approved": false
+    }
+  },
+  {
+    "query_id": "bench_121",
+    "question": "Under Section 53 of the IBC, where do government taxes rank relative to unsecured financial creditors?",
+    "split": "held_out",
+    "category": "CONFLICT_AND_DISTINCTION",
+    "risk_score": 6.5,
+    "priority_tier": "PRIORITY_1_CRITICAL",
+    "risk_factors": [
+      "STATUTORY_CONFLICT_RISK (+1.5)"
+    ],
+    "current_status": "PENDING_HUMAN_LEGAL_REVIEW",
+    "legal_domain": "Corporate Insolvency & Bankruptcy",
+    "court_level": "Supreme Court of India",
+    "jurisdiction": "Supreme Court of India / Indian Union",
+    "procedural_posture_and_judgment_date": "Insolvency and Bankruptcy Code enacted 2016; Essar Steel decided Nov 15, 2019 ((2020) 8 SCC 531); Paschimanchal Vidyut decided July 17, 2023 ((2023) 10 SCC 60).",
+    "proposed_expected_answer": "Under Section 53(1), unsecured financial creditors rank at priority (d), which is strictly senior to Central and State Government taxes, which rank below at priority (e).",
+    "required_citations": [
+      "Section 53 Insolvency and Bankruptcy Code 2016",
+      "Essar Steel (2020)"
+    ],
+    "authoritative_sources": [
+      {
+        "chunk_id": "chunk_statute_ibc_sec53",
+        "case_name": "Insolvency and Bankruptcy Code, 2016",
+        "citation": "Section 53",
+        "court": "Parliament of India",
+        "year": 2016,
+        "excerpt": "Statutory Text - Section 53, Insolvency and Bankruptcy Code 2016: 'Distribution of assets: (1) Notwithstanding anything to the contrary contained in any law enacted by the Parliament or any State Legislature for the time being in force, the proceeds from the sale of the liquidation assets shall be distributed in the following order of priority: (a) insolvency resolution process costs and liquidation costs; (b) debts owed to a secured creditor who has relinquished security and workmen's dues for twenty-four months; (c) wages and unpaid dues owed to employees other than workmen; (d) financial debts owed to unsecured creditors; (e) taxes owed to the Central Government and State Government.'"
+      },
+      {
+        "chunk_id": "chunk_essar_01",
+        "case_name": "CoC of Essar Steel v. Satish Kumar Gupta",
+        "citation": "(2020) 8 SCC 531",
+        "court": "Supreme Court of India",
+        "year": 2020,
+        "excerpt": "In Committee of Creditors of Essar Steel India Ltd. v. Satish Kumar Gupta (2020) 8 SCC 531, the Supreme Court firmly established the supremacy of the 'commercial wisdom' of the Committee of Creditors (CoC) in approving a resolution plan under Section 30(4) of the IBC. The court held that neither NCLT nor NCLAT possesses jurisdiction to sit in appeal over commercial decisions of the CoC or alter the negotiated distribution of proceeds between secured financial creditors and operational creditors, provided mandatory statutory minimums are satisfied."
+      }
+    ],
+    "potential_contrary_or_overruling_authorities": "State Tax Officer v. Rainbow Papers (2022) distinguished/clarified by Paschimanchal Vidyut (2023) regarding priority under Section 53.",
+    "abstention_expectation": "MUST NOT ABSTAIN \u2014 Indexed controlling authorities substantiate ratio.",
+    "known_uncertainties_and_reviewer_questions": "Tension between statutory security interests created by state tax laws and Section 53 non-obstante priority over state taxes.",
+    "human_verification_checklist": {
+      "source_verified": false,
+      "holding_accurately_extracted": false,
+      "ratio_distinguished_from_obiter": false,
+      "overruled_authorities_flagged": false,
+      "procedural_posture_verified": false,
+      "gold_label_approved": false
+    }
+  },
+  {
+    "query_id": "bench_106",
+    "question": "How did Ssangyong Engineering restrict the ground of 'patent illegality' compared to Associate Builders?",
+    "split": "dev",
+    "category": "CONFLICT_AND_DISTINCTION",
+    "risk_score": 6.5,
+    "priority_tier": "PRIORITY_1_CRITICAL",
+    "risk_factors": [
+      "SUBMISSION_VS_HOLDING_RISK (+1.5)"
+    ],
+    "current_status": "PENDING_HUMAN_LEGAL_REVIEW",
+    "legal_domain": "Commercial Law & Arbitration",
+    "court_level": "Supreme Court of India",
+    "jurisdiction": "Supreme Court of India / Indian Union",
+    "procedural_posture_and_judgment_date": "Associate Builders decided Nov 25, 2014 ((2015) 3 SCC 49); Ssangyong Engineering decided May 8, 2019 ((2019) 15 SCC 131); 2015 Amendment Act 3 of 2016.",
+    "proposed_expected_answer": "Ssangyong Engineering explained that following the 2015 Amendment, 'patent illegality' is confined to domestic arbitrations under Section 34(2A) and is completely unavailable to challenge international commercial arbitrations seated in India, narrowing Associate Builders.",
+    "required_citations": [
+      "Ssangyong Engineering v. NHAI (2019) 15 SCC 131",
+      "Associate Builders v. DDA (2015) 3 SCC 49"
+    ],
+    "authoritative_sources": [
+      {
+        "chunk_id": "chunk_ssangyong_01",
+        "case_name": "Ssangyong Engineering & Construction v. NHAI",
+        "citation": "(2019) 15 SCC 131",
+        "court": "Supreme Court of India",
+        "year": 2019,
+        "excerpt": "In Ssangyong Engineering & Construction Co. Ltd. v. NHAI (2019) 15 SCC 131, the Supreme Court examined the 2015 Amendment to Section 34 of the Arbitration and Conciliation Act. The court followed Associate Builders but ruled that after the 2015 amendment, 'patent illegality' is no longer available to challenge international commercial arbitrations seated in India, and the test of public policy is strictly narrowed to fundamental policy of Indian law and basic notions of morality or justice."
+      },
+      {
+        "chunk_id": "chunk_assoc_01",
+        "case_name": "Associate Builders v. DDA",
+        "citation": "(2015) 3 SCC 49",
+        "court": "Supreme Court of India",
+        "year": 2015,
+        "excerpt": "In Associate Builders v. Delhi Development Authority (2015) 3 SCC 49, the Supreme Court clarified the scope of 'public policy of India' under Section 34 of the Arbitration and Conciliation Act 1996. It held that an arbitral award can be set aside only on grounds such as fundamental policy of Indian law, interest of India, justice or morality, or patent illegality appearing on the face of the award. The court emphasized that the merits of an award cannot be re-opened in a Section 34 petition."
+      }
+    ],
+    "potential_contrary_or_overruling_authorities": "Associate Builders expansive patent illegality ground curtailed following 2015 Amendment inserting Section 34(2A).",
+    "abstention_expectation": "MUST NOT ABSTAIN \u2014 Indexed controlling authorities substantiate ratio.",
+    "known_uncertainties_and_reviewer_questions": "Threshold between patent illegality on face of award vs impermissible reappreciation of evidence by Section 34 court.",
+    "human_verification_checklist": {
+      "source_verified": false,
+      "holding_accurately_extracted": false,
+      "ratio_distinguished_from_obiter": false,
+      "overruled_authorities_flagged": false,
+      "procedural_posture_verified": false,
+      "gold_label_approved": false
+    }
+  },
+  {
+    "query_id": "bench_072",
+    "question": "What did the seven-judge bench in In Re: Stamp Act (2024) decide regarding NN Global (2023)?",
+    "split": "dev",
+    "category": "PRECEDENT_RELATIONSHIP",
+    "risk_score": 6.5,
+    "priority_tier": "PRIORITY_1_CRITICAL",
+    "risk_factors": [
+      "OVERRULED_AUTHORITY_RISK (+2.0)",
+      "SUBMISSION_VS_HOLDING_RISK (+1.5)"
+    ],
+    "current_status": "PENDING_HUMAN_LEGAL_REVIEW",
+    "legal_domain": "Commercial Law & Arbitration",
+    "court_level": "Supreme Court of India",
+    "jurisdiction": "Supreme Court of India / Indian Union",
+    "procedural_posture_and_judgment_date": "NN Global (5-Judge) decided Apr 25, 2023 ((2023) 7 SCC 1); In Re Interplay (7-Judge) decided Dec 13, 2023 ((2024) 6 SCC 1).",
+    "proposed_expected_answer": "The seven-judge Constitution Bench overruled NN Global (2023) and held that non-stamping or insufficient stamping of a contract is a curable defect that does not render the arbitration agreement void ab initio.",
+    "required_citations": [
+      "In Re: Interplay Between Arbitration Agreements and the Stamp Act (2024) 6 SCC 1",
+      "NN Global Mercantile v. Indo Unique Flame (2023) 7 SCC 1"
+    ],
+    "authoritative_sources": [
+      {
+        "chunk_id": "chunk_stamp_curable_01",
+        "case_name": "In Re: Interplay Between Arbitration and Stamp Act",
+        "citation": "(2024) 6 SCC 1",
+        "court": "Supreme Court of India",
+        "year": 2024,
+        "excerpt": "In In Re: Interplay Between Arbitration Agreements and the Indian Stamp Act 1899 (2024) 6 SCC 1, a unanimous seven-judge Constitution Bench overruled NN Global (5-Judge) and held that non-stamping or insufficient stamping is a curable defect under the Stamp Act. The court held that an unstamped arbitration agreement is not void ab initio, and the referral court under Section 8 or 11 must examine only the prima facie existence of the agreement, leaving stamping objections to the arbitral tribunal under Section 16."
+      },
+      {
+        "chunk_id": "chunk_nnglobal_01",
+        "case_name": "NN Global Mercantile v. Indo Unique Flame",
+        "citation": "(2023) 7 SCC 1",
+        "court": "Supreme Court of India",
+        "year": 2023,
+        "excerpt": "In NN Global Mercantile Pvt. Ltd. v. Indo Unique Flame Ltd. (2023) 7 SCC 1, a five-judge Constitution Bench held by a 3:2 majority that an unstamped or insufficiently stamped commercial contract containing an arbitration clause cannot be acted upon or enforced under Section 11 of the Arbitration and Conciliation Act 1996 until the instrument is impounded and validated under the Indian Stamp Act 1899. This decision was subsequently reconsidered and overruled by a seven-judge bench."
+      }
+    ],
+    "potential_contrary_or_overruling_authorities": "NN Global (2023) 5-judge bench overruled; SMS Tea and Vidya Drolia stamping holdings modified/clarified.",
+    "abstention_expectation": "MUST NOT ABSTAIN \u2014 Indexed controlling authorities substantiate ratio.",
+    "known_uncertainties_and_reviewer_questions": "Procedure when stamp duty deficit is evident on certified copy produced before Section 11 referral court vs original document.",
+    "human_verification_checklist": {
+      "source_verified": false,
+      "holding_accurately_extracted": false,
+      "ratio_distinguished_from_obiter": false,
+      "overruled_authorities_flagged": false,
+      "procedural_posture_verified": false,
+      "gold_label_approved": false
+    }
+  },
+  {
+    "query_id": "bench_056",
+    "question": "How does the Supreme Court distinguish an unconstitutional restriction on privacy from a legitimate surveillance measure under Puttaswamy?",
+    "split": "held_out",
+    "category": "CONFLICT_DISTINCTION",
+    "risk_score": 6.5,
+    "priority_tier": "PRIORITY_1_CRITICAL",
+    "risk_factors": [
+      "SUBMISSION_VS_HOLDING_RISK (+1.5)"
+    ],
+    "current_status": "PENDING_HUMAN_LEGAL_REVIEW",
+    "legal_domain": "Constitutional & Commercial Jurisprudence",
+    "court_level": "Supreme Court of India",
+    "jurisdiction": "Supreme Court of India / Indian Union",
+    "procedural_posture_and_judgment_date": "Puttaswamy (9-Judge) decided Aug 24, 2017 ((2017) 10 SCC 1).",
+    "proposed_expected_answer": "A legitimate surveillance measure must satisfy the three-pronged proportionality test: authorized by a valid law, directed towards a legitimate state aim, and proportionate as the least intrusive means.",
+    "required_citations": [
+      "Puttaswamy v. Union of India"
+    ],
+    "authoritative_sources": [
+      {
+        "chunk_id": "chunk_putta_02",
+        "case_name": "Puttaswamy v. Union of India",
+        "citation": "(2017) 10 SCC 1",
+        "court": "Supreme Court of India",
+        "year": 2017,
+        "excerpt": "In Puttaswamy, the court established a strict three-fold proportionality test for any state encroachment upon privacy: (i) legality (existence of a law), (ii) legitimate state aim or need, and (iii) proportionality of the means adopted to the object sought to be achieved, ensuring the measure is the least intrusive option."
+      }
+    ],
+    "potential_contrary_or_overruling_authorities": "Executive surveillance without statutory authorization is ultra vires; proportionality requires legitimate aim and least intrusive means.",
+    "abstention_expectation": "MUST NOT ABSTAIN \u2014 Indexed controlling authorities substantiate ratio.",
+    "known_uncertainties_and_reviewer_questions": "Balancing national security surveillance exceptions against lack of independent judicial oversight mechanisms.",
+    "human_verification_checklist": {
+      "source_verified": false,
+      "holding_accurately_extracted": false,
+      "ratio_distinguished_from_obiter": false,
+      "overruled_authorities_flagged": false,
+      "procedural_posture_verified": false,
+      "gold_label_approved": false
+    }
+  },
+  {
+    "query_id": "bench_007",
+    "question": "How did the 9-judge bench in Puttaswamy treat the earlier decisions in M.P. Sharma and Kharak Singh?",
+    "split": "dev",
+    "category": "PRECEDENT_RELATIONSHIP",
+    "risk_score": 6.5,
+    "priority_tier": "PRIORITY_1_CRITICAL",
+    "risk_factors": [
+      "OVERRULED_AUTHORITY_RISK (+2.0)",
+      "SUBMISSION_VS_HOLDING_RISK (+1.5)"
+    ],
+    "current_status": "PENDING_HUMAN_LEGAL_REVIEW",
+    "legal_domain": "Constitutional & Commercial Jurisprudence",
+    "court_level": "Supreme Court of India",
+    "jurisdiction": "Supreme Court of India / Indian Union",
+    "procedural_posture_and_judgment_date": "M.P. Sharma (8-Judge, 1954); Kharak Singh (6-Judge, 1962); Puttaswamy (9-Judge, 2017).",
+    "proposed_expected_answer": "Puttaswamy expressly overruled M.P. Sharma and Kharak Singh to the extent they held that privacy was not a fundamental right.",
+    "required_citations": [
+      "Puttaswamy v. Union of India",
+      "M.P. Sharma v. Satish Chandra",
+      "Kharak Singh v. State of U.P."
+    ],
+    "authoritative_sources": [
+      {
+        "chunk_id": "chunk_putta_01",
+        "case_name": "Puttaswamy v. Union of India",
+        "citation": "(2017) 10 SCC 1",
+        "court": "Supreme Court of India",
+        "year": 2017,
+        "excerpt": "In Justice K.S. Puttaswamy (Retd.) v. Union of India (2017) 10 SCC 1, a unanimous nine-judge Constitution Bench held that the Right to Privacy is a fundamental right guaranteed under Article 21 and Part III of the Constitution. The court expressly overruled previous judgments in M.P. Sharma (1954) and Kharak Singh (1964) to the extent that they held privacy was not a constitutionally protected right."
+      },
+      {
+        "chunk_id": "chunk_mpsharma_01",
+        "case_name": "M.P. Sharma v. Satish Chandra",
+        "citation": "(1954) SCR 1077",
+        "court": "Supreme Court of India",
+        "year": 1954,
+        "excerpt": "In M.P. Sharma v. Satish Chandra (1954) SCR 1077, an eight-judge bench held that search warrants under Section 96 of the Code of Criminal Procedure did not violate Article 19(1)(f) or Article 20(3) of the Constitution, observing that the Indian Constitution does not recognize an express fundamental right to privacy analogous to the Fourth Amendment of the US Constitution."
+      },
+      {
+        "chunk_id": "chunk_kharak_01",
+        "case_name": "Kharak Singh v. State of U.P.",
+        "citation": "(1964) 1 SCR 332",
+        "court": "Supreme Court of India",
+        "year": 1964,
+        "excerpt": "In Kharak Singh v. State of U.P. (1964) 1 SCR 332, a six-judge bench held that unauthorized domiciliary police visits at night violated personal liberty under Article 21, but the majority rejected the existence of a broader fundamental right to privacy. Subba Rao, J. in his dissenting opinion held that privacy was an integral element of personal liberty."
+      }
+    ],
+    "potential_contrary_or_overruling_authorities": "M.P. Sharma and Kharak Singh overruled on privacy exclusion.",
+    "abstention_expectation": "MUST NOT ABSTAIN \u2014 Indexed controlling authorities substantiate ratio.",
+    "known_uncertainties_and_reviewer_questions": "Application of horizontal privacy obligations against private corporate data aggregators.",
+    "human_verification_checklist": {
+      "source_verified": false,
+      "holding_accurately_extracted": false,
+      "ratio_distinguished_from_obiter": false,
+      "overruled_authorities_flagged": false,
+      "procedural_posture_verified": false,
+      "gold_label_approved": false
+    }
+  }
+]

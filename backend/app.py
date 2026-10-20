@@ -15,6 +15,11 @@ import backend.models.document_intel  # noqa: F401
 # Create database tables (in production, use Alembic migrations)
 Base.metadata.create_all(bind=engine)
 
+# Validate critical security configuration on startup in production
+from backend.security import get_secret_key
+if settings.ENVIRONMENT.lower() == "production":
+    get_secret_key()
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
@@ -77,18 +82,95 @@ async def global_exception_handler(request: Request, exc: Exception):
         content=content,
     )
 
+import os
+
+@app.on_event("startup")
+def startup_diagnostics():
+    """Outputs secure operational startup diagnostics without exposing sensitive credentials."""
+    logger.info("==================================================")
+    logger.info(f"Starting {settings.PROJECT_NAME} (Env: {settings.ENVIRONMENT})")
+    logger.info(f"Database: {settings.DATABASE_URL.split('://')[0]}://***")
+    logger.info(f"CORS Allowed Origins: {settings.CORS_ORIGINS}")
+    logger.info(f"Storage Paths: uploads={settings.UPLOAD_DIR}, processed={settings.PROCESSED_DIR}, monitoring={settings.PILOT_MONITORING_DIR}")
+    logger.info(f"Pilot Monitoring: enabled={settings.PILOT_MONITORING_ENABLED}, log_queries={settings.PILOT_MONITORING_LOG_QUERIES}, retention={settings.PILOT_MONITORING_RETENTION_DAYS}d")
+    ai_status = "READY (Gemini configured)" if settings.GEMINI_API_KEY else "DEGRADED (No GEMINI_API_KEY; search & evaluation operational)"
+    logger.info(f"AI Synthesis Provider: {ai_status}")
+    logger.info("==================================================")
+
 @app.get("/health")
 def health_check():
+    """Liveness probe: verifies process is alive and responding."""
     return {"status": "ok", "project": settings.PROJECT_NAME}
 
 @app.get("/health/ready")
 def health_ready(db: Session = Depends(get_db)):
+    """
+    Readiness probe: verifies database connectivity, storage writability, and AI provider status.
+    Distinguishes fully ready vs degraded mode (e.g. AI unconfigured) vs unavailable (DB/storage down).
+    Never exposes credentials or internal keys.
+    """
+    components = {}
+    is_healthy = True
+
+    # 1. Database check
     try:
-        # Check DB connection
         db.execute(text("SELECT 1"))
-        return {"status": "ready"}
-    except Exception:
-        return JSONResponse(status_code=503, content={"status": "database unavailable"})
+        components["database"] = {"status": "connected"}
+    except Exception as e:
+        logger.error(f"Readiness check - database failure: {e}")
+        components["database"] = {"status": "unavailable", "error": "Database connection failed."}
+        is_healthy = False
+
+    # 2. Persistent Storage check
+    storage_dirs = [settings.UPLOAD_DIR, settings.PROCESSED_DIR, settings.PILOT_MONITORING_DIR]
+    storage_ok = True
+    for s_dir in storage_dirs:
+        try:
+            os.makedirs(s_dir, exist_ok=True)
+            # Test write ability
+            test_file = os.path.join(s_dir, ".health_check_probe")
+            with open(test_file, "w") as f:
+                f.write("probe")
+            if os.path.exists(test_file):
+                os.remove(test_file)
+        except Exception as e:
+            logger.error(f"Readiness check - storage directory '{s_dir}' unwritable: {e}")
+            storage_ok = False
+            break
+
+    if storage_ok:
+        components["storage"] = {"status": "writable"}
+    else:
+        components["storage"] = {"status": "unwritable", "error": "Storage volume permission or path failure."}
+        is_healthy = False
+
+    # 3. AI Synthesis provider status
+    if settings.GEMINI_API_KEY:
+        components["ai_synthesis"] = {"status": "configured"}
+    else:
+        components["ai_synthesis"] = {
+            "status": "degraded",
+            "message": "AI synthesis key not configured; hybrid search, comparison, and evaluation remain available."
+        }
+
+    # Failure case: essential dependency down -> HTTP 503
+    if not is_healthy:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unavailable",
+                "components": components,
+                "project": settings.PROJECT_NAME
+            }
+        )
+
+    # Degraded case: essential dependencies ready, but AI unconfigured -> HTTP 200 with degraded flag
+    overall_status = "ready" if settings.GEMINI_API_KEY else "degraded"
+    return {
+        "status": overall_status,
+        "components": components,
+        "project": settings.PROJECT_NAME
+    }
 
 from backend.routes.api import router as api_router
 from backend.routes.auth import router as auth_router

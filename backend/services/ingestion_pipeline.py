@@ -138,6 +138,15 @@ def _execute_pipeline(db: Session, document_id: int):
         logger.error("Document %d not found for pipeline", document_id)
         return
 
+    # Guard against duplicate concurrent executions
+    active_stages = ("EXTRACTING", "PARSING", "STRUCTURING", "CHUNKING", "EMBEDDING", "INDEXING")
+    if doc.status in active_stages:
+        logger.warning(
+            "Pipeline already running for document %d (status=%s) — skipping duplicate invocation",
+            document_id, doc.status
+        )
+        return
+
     # Mark started
     job = db.query(DocumentProcessingJob).filter(
         DocumentProcessingJob.document_id == document_id
@@ -164,9 +173,9 @@ def _execute_pipeline(db: Session, document_id: int):
         logger.info("Doc %d: extracted %d pages in %dms", document_id, len(pages), duration_ms)
     except Exception as e:
         _log_stage(db, document_id, "EXTRACTION", "FAILED",
-                   message="Text extraction failed.")
+                   message=f"Text extraction failed: {str(e)}")
         _update_job(db, document_id, "FAILED", STAGE_PROGRESS["EXTRACTING"],
-                    "Extraction failed", "Could not extract text from this document.")
+                    "Extraction failed", f"Could not extract text: {str(e)}")
         return
 
     # -----------------------------------------------------------------------
@@ -179,7 +188,7 @@ def _execute_pipeline(db: Session, document_id: int):
         from backend.services.pdf_service import detect_ocr_required
         ocr_needed = detect_ocr_required(pages)
     else:
-        ocr_needed = all(not p.get("has_text", True) for p in pages)
+        ocr_needed = False
 
     if ocr_needed:
         doc.ocr_required = True
@@ -188,6 +197,14 @@ def _execute_pipeline(db: Session, document_id: int):
                         "Running OCR on scanned document")
             # Attempt OCR if pytesseract configured
             pages = _attempt_ocr(doc, pages, db, document_id)
+            if detect_ocr_required(pages):
+                _log_stage(db, document_id, "OCR_CHECK", "FAILED",
+                           message="OCR could not extract sufficient text from scanned document.")
+                _update_job(db, document_id, "OCR_REQUIRED", STAGE_PROGRESS["OCR_CHECK"],
+                            "OCR failed to extract text",
+                            "This document appears to be scanned and OCR could not extract readable text.")
+                db.commit()
+                return
         else:
             # Not silently creating empty index
             _log_stage(db, document_id, "OCR_CHECK", "SKIPPED",
@@ -200,6 +217,17 @@ def _execute_pipeline(db: Session, document_id: int):
     else:
         _log_stage(db, document_id, "OCR_CHECK", "SUCCESS",
                    message="Text extractable — no OCR needed")
+
+    # Check for empty text across all document types
+    total_words = sum(p.get("word_count", 0) for p in pages)
+    if total_words == 0:
+        _log_stage(db, document_id, "EXTRACTION", "FAILED",
+                   message="Document contains no extractable text.")
+        _update_job(db, document_id, "FAILED", STAGE_PROGRESS["EXTRACTING"],
+                    "No text extracted",
+                    "The document contains no readable text content.")
+        db.commit()
+        return
 
     # -----------------------------------------------------------------------
     # Stage 3: SAVE PAGE RECORDS
@@ -345,6 +373,7 @@ def _execute_pipeline(db: Session, document_id: int):
                 section=c_dict["section"],
                 legal_topics=legal_topics,
                 chunk_sequence=c_dict["sequence"],
+                owner_id=doc.owner_id if doc and doc.owner_id is not None else 0,
             )
 
     _log_stage(db, document_id, "EMBEDDING_INDEXING", "SUCCESS",

@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-10-20T13:11:27.253139+00:00",
+  "mode": "fixed_corpus",
+  "is_compatible": false,
+  "gate_decision": "REJECTED (Incompatible Datasets: Corpus size mismatch: baseline=20 vs candidate=52; Query count mismatch: baseline=61 vs candidate=160; Benchmark version mismatch: baseline=v2.0.0 vs candidate=v3.0.0)",
+  "gate_passed": false,
+  "rejection_reason": "Fixed-corpus implementation comparison requires identical benchmark datasets. Corpus size mismatch: baseline=20 vs candidate=52; Query count mismatch: baseline=61 vs candidate=160; Benchmark version mismatch: baseline=v2.0.0 vs candidate=v3.0.0. Run with mode='expanded_corpus' to perform cross-benchmark coverage evaluation.",
+  "baseline_run": {
+    "timestamp": "2026-10-20T12:16:32.729809+00:00",
+    "version": "2.0.0",
+    "mode": "optimized",
+    "corpus_size": 20,
+    "total_queries": 61
+  },
+  "candidate_run": {
+    "timestamp": "2026-10-20T13:08:35.696059+00:00",
+    "version": "3.0.0",
+    "mode": "optimized",
+    "corpus_size": 52,
+    "total_queries": 160
+  },
+  "metric_checks": [],
+  "violations_count": 1,
+  "violations_list": [
+    "Corpus size mismatch: baseline=20 vs candidate=52; Query count mismatch: baseline=61 vs candidate=160; Benchmark version mismatch: baseline=v2.0.0 vs candidate=v3.0.0"
+  ],
+  "query_level_regressions_count": 0,
+  "query_level_regressions": []
+}

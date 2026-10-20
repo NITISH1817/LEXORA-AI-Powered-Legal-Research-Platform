@@ -38,6 +38,9 @@ class CaseResponse(CaseBase):
     class Config:
         from_attributes = True
 
+# Alias for backward-compatible routing and research schemas
+CaseSchema = CaseResponse
+
 class DocumentBase(BaseModel):
     title: str
     document_type: str
@@ -122,6 +125,8 @@ class SearchRequest(BaseModel):
     filters: Optional[Dict[str, Any]] = None
 
 class SearchResultItem(BaseModel):
+    chunk_id: Optional[str] = None
+    document_id: Optional[int] = None
     case_name: str
     court: str
     year: int
@@ -131,10 +136,13 @@ class SearchResultItem(BaseModel):
     keyword_score: float
     matched_text: str
     reason: str
+    section: Optional[str] = None
 
 class ResearchRequest(BaseModel):
     query: str
     top_k: int = 8
+    filters: Optional[Dict[str, Any]] = None
+    summary_mode: Optional[str] = "RESEARCH"
 
 class KeyFinding(BaseModel):
     finding: str
@@ -160,6 +168,8 @@ class SourceData(BaseModel):
     page_number: int
     chunk_id: str
     matched_text: str
+    section: Optional[str] = None
+    relevance_score: Optional[float] = None
 
 class ResearchResponse(BaseModel):
     query: str
@@ -169,6 +179,7 @@ class ResearchResponse(BaseModel):
     authorities: List[Authority]
     sources: List[SourceData]
     limitations: str
+    retrieval_info: Optional[Dict[str, Any]] = None
 
 # ---------------------------------------------------------
 # Phase 3 Lexora Intelligence Schemas
@@ -195,6 +206,25 @@ class PartyArgumentSchema(BaseModel):
     class Config:
         from_attributes = True
 
+from enum import Enum
+
+class DatePrecision(str, Enum):
+    EXACT = "EXACT"
+    APPROXIMATE = "APPROXIMATE"
+    RANGE = "RANGE"
+    UNKNOWN = "UNKNOWN"
+
+class TimelineCategory(str, Enum):
+    FACTUAL = "FACTUAL"
+    PROCEDURAL = "PROCEDURAL"
+    STATUTORY = "STATUTORY"
+    OTHER = "OTHER"
+
+class AttributionStatus(str, Enum):
+    ESTABLISHED = "ESTABLISHED"
+    ALLEGATION = "ALLEGATION"
+    DISPUTED = "DISPUTED"
+
 class CaseEventSchema(BaseModel):
     id: Optional[int] = None
     event_date: Optional[str] = None
@@ -211,6 +241,11 @@ class CaseEventSchema(BaseModel):
     page_number: Optional[int] = None
     supporting_text: str
     verification_status: str
+    confidence: Optional[float] = 1.0
+    is_allegation: Optional[bool] = False
+    attribution_status: Optional[str] = "ESTABLISHED"
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -220,6 +255,7 @@ class TimelineResponse(BaseModel):
     factual_events: List[CaseEventSchema]
     procedural_events: List[CaseEventSchema]
     events: List[CaseEventSchema]
+    undated_events: Optional[List[CaseEventSchema]] = []
 
 class ImportantPassageSchema(BaseModel):
     id: Optional[int] = None
@@ -250,6 +286,9 @@ class CaseIntelligenceResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+# Alias for backward-compatible routing
+CaseDetailSchema = CaseIntelligenceResponse
 
 # ---------------------------------------------------------
 # Phase 4 Lexora Comparison Schemas
@@ -308,6 +347,8 @@ class GraphEdge(BaseModel):
     relationship: str
     page: Optional[int] = None
     evidence: str
+    verification_status: Optional[str] = "VERIFIED"
+    confidence: Optional[float] = 1.0
 
 class GraphResponse(BaseModel):
     nodes: List[GraphNode]
@@ -359,7 +400,7 @@ class ResearchCaseSchema(BaseModel):
     id: int
     case_id: int
     added_at: datetime
-    case: CaseSchema
+    case: Optional[CaseSchema] = None
     class Config:
         from_attributes = True
 

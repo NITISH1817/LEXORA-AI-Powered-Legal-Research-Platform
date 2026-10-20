@@ -154,23 +154,68 @@ class CaseIntelligenceEngine:
             for p in parsed.get("principles", []):
                 db.add(LegalPrinciple(case_id=case.id, description=p.get("description"), source_passage=p.get("source_passage"), page_number=p.get("page_number")))
                 
-            for ev in parsed.get("timeline", []):
-                import json
+            from backend.services.timeline_service import (
+                validate_date_grounding,
+                distinguish_from_judgment_date,
+                detect_attribution,
+                deduplicate_timeline_events
+            )
+
+            raw_timeline = parsed.get("timeline", [])
+            # Deduplicate across overlapping chunks
+            deduped_timeline = deduplicate_timeline_events(raw_timeline)
+
+            judgment_date_str = None
+            if getattr(case, "decision_date", None):
+                try:
+                    judgment_date_str = case.decision_date.strftime("%Y-%m-%d")
+                except Exception:
+                    judgment_date_str = str(case.decision_date)
+
+            for ev in deduped_timeline:
                 actors_json = json.dumps(ev.get("actors", [])) if isinstance(ev.get("actors"), list) else None
+                supp_text = ev.get("supporting_text", "No passage provided")
+                raw_date = ev.get("event_date")
+                raw_dtext = ev.get("date_text", "Unknown Date")
+                raw_prec = ev.get("date_precision", "unknown")
+                ev_type = ev.get("event_type", "OTHER")
+
+                # 1. Grounding check against source passage
+                val_date, val_dtext, val_prec, v_status = validate_date_grounding(
+                    raw_date, raw_dtext, raw_prec, supp_text
+                )
+
+                # 2. Distinguish from judgment delivery date
+                val_date, val_dtext, v_status = distinguish_from_judgment_date(
+                    val_date, val_dtext, ev_type, judgment_date_str, supp_text
+                )
+
+                # 3. Detect allegation vs established fact
+                is_alleg, attr_status = detect_attribution(
+                    ev.get("title", ""), ev.get("description", ""), supp_text
+                )
+
                 db.add(CaseEvent(
                     case_id=case.id,
-                    event_date=ev.get("event_date"),
-                    date_text=ev.get("date_text", "Unknown Date"),
-                    date_precision=ev.get("date_precision", "unknown"),
-                    event_type=ev.get("event_type", "OTHER"),
+                    event_date=val_date,
+                    date_text=val_dtext,
+                    date_precision=val_prec,
+                    event_type=ev_type,
                     title=ev.get("title", "Event"),
                     description=ev.get("description", ""),
                     actors=actors_json,
                     court=ev.get("court"),
                     timeline_type=ev.get("timeline_type", "FACTUAL"),
+                    source_document_id=ev.get("source_document_id"),
+                    source_chunk_id=ev.get("source_chunk_id"),
                     page_number=ev.get("page_number"),
-                    supporting_text=ev.get("supporting_text", "No passage provided"),
-                    verification_status="needs_review"
+                    supporting_text=supp_text,
+                    verification_status=v_status,
+                    confidence=float(ev.get("confidence", 1.0)),
+                    is_allegation=is_alleg,
+                    attribution_status=attr_status,
+                    start_date=ev.get("start_date"),
+                    end_date=ev.get("end_date")
                 ))                
             for ip in parsed.get("important_passages", []):
                 db.add(ImportantPassage(case_id=case.id, category=ip.get("category", "REASONING"), text=ip.get("text"), page_number=ip.get("page_number")))
@@ -209,3 +254,5 @@ class CaseIntelligenceEngine:
             raise e
 
 intelligence_engine = CaseIntelligenceEngine()
+# Backward-compatible alias for existing tests and services
+IntelligenceService = CaseIntelligenceEngine

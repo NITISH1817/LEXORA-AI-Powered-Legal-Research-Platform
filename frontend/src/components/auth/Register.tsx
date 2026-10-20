@@ -12,15 +12,19 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/register', {
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/register`, {
         email, password, full_name: fullName
       });
       setSuccess(true);
       setTimeout(() => {
         window.location.href = '/login';
       }, 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Registration failed.");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Registration failed.");
+      } else {
+        setError("Registration failed.");
+      }
     }
   };
 

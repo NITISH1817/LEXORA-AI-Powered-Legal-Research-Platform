@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import axios from 'axios';
 
 interface User {
-    id: int;
+    id: number;
     email: string;
     full_name: string;
     role: string;
@@ -26,20 +26,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (token) {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             localStorage.setItem('token', token);
+            localStorage.setItem('access_token', token);
             fetchUser();
         } else {
             delete axios.defaults.headers.common['Authorization'];
             localStorage.removeItem('token');
+            localStorage.removeItem('access_token');
             setUser(null);
         }
     }, [token]);
 
     const fetchUser = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/me');
+            const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/me`);
             setUser(res.data);
-        } catch (e) {
-            console.error("Token invalid, logging out");
+        } catch (err) {
+            console.error("Token invalid, logging out", err);
             logout();
         }
     }
@@ -49,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         formData.append('username', email);
         formData.append('password', pass);
         
-        const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/login', formData, {
+        const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/login`, formData, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
         setToken(res.data.access_token);

@@ -1,0 +1,108 @@
+{
+  "description": "Deterministic Legal Retrieval Benchmark for Lexora Phase 5 Hybrid Search Evaluation.",
+  "metadata": {
+    "version": "1.0.0",
+    "k_eval": 3,
+    "limitations": "Synthetic small-scale benchmark containing focused statutory and case law principles. Does not represent full multi-thousand-page corporate filings."
+  },
+  "corpus": [
+    {
+      "id": "chunk_contract_01",
+      "text": "Section 74 of the Indian Contract Act provides for liquidated damages where a contract stipulates a sum named as a genuine pre-estimate of loss. The Supreme Court in Kailash Nath Associates v. DDA held that proof of actual loss is essential unless impossible or difficult to prove.",
+      "metadata": {
+        "case_name": "Kailash Nath Associates v. DDA",
+        "court": "Supreme Court of India",
+        "year": 2015,
+        "page_number": 12,
+        "section": "REASONING"
+      }
+    },
+    {
+      "id": "chunk_contract_02",
+      "text": "In breach of contract claims under Section 73 and 74, liquidated damages represent an upper ceiling on recoverable compensation rather than an automatic penalty. Penal stipulations and extortionate forfeit clauses are strictly unenforceable.",
+      "metadata": {
+        "case_name": "ONGC v. Saw Pipes Ltd",
+        "court": "Supreme Court of India",
+        "year": 2003,
+        "page_number": 25,
+        "section": "HOLDING"
+      }
+    },
+    {
+      "id": "chunk_privacy_01",
+      "text": "In Justice K.S. Puttaswamy (Retd.) v. Union of India (2017), a nine-judge Constitution Bench held that the Right to Privacy is a fundamental right protected under Article 21 and Part III of the Constitution, subject to proportionality and legitimate state aim.",
+      "metadata": {
+        "case_name": "Puttaswamy v. Union of India",
+        "court": "Supreme Court of India",
+        "year": 2017,
+        "page_number": 1,
+        "section": "CONSTITUTIONAL_HOLDING"
+      }
+    },
+    {
+      "id": "chunk_env_01",
+      "text": "Under the Public Trust Doctrine and the Polluter Pays Principle recognized in Vellore Citizens Welfare Forum, the polluter is liable to pay the costs of remedial action, restoring environmental degradation, and compensating victims of pollution.",
+      "metadata": {
+        "case_name": "Vellore Citizens Welfare Forum v. UOI",
+        "court": "Supreme Court of India",
+        "year": 1996,
+        "page_number": 8,
+        "section": "ENVIRONMENTAL_HOLDING"
+      }
+    },
+    {
+      "id": "chunk_arb_01",
+      "text": "Under Section 34 of the Arbitration and Conciliation Act 1996, an arbitral award can only be set aside if it violates the public policy of India or suffers from patent illegality appearing on the face of the award, without reappreciating evidentiary merits.",
+      "metadata": {
+        "case_name": "Associate Builders v. DDA",
+        "court": "Supreme Court of India",
+        "year": 2015,
+        "page_number": 18,
+        "section": "ARBITRATION_HOLDING"
+      }
+    },
+    {
+      "id": "chunk_bail_01",
+      "text": "The grant of regular bail under Section 439 of the Code of Criminal Procedure requires satisfaction of the judicial triple test: flight risk, danger of tampering with evidence, and likelihood of influencing witnesses or committing further offences.",
+      "metadata": {
+        "case_name": "P. Chidambaram v. CBI",
+        "court": "Supreme Court of India",
+        "year": 2019,
+        "page_number": 6,
+        "section": "CRIMINAL_PROCEDURE"
+      }
+    }
+  ],
+  "queries": [
+    {
+      "query_id": "q1",
+      "query": "liquidated damages Section 74 Indian Contract Act genuine pre-estimate",
+      "relevant_chunk_ids": ["chunk_contract_01", "chunk_contract_02"],
+      "description": "Tests retrieval of contract breach and liquidated damages doctrine"
+    },
+    {
+      "query_id": "q2",
+      "query": "Right to Privacy Article 21 fundamental right Puttaswamy",
+      "relevant_chunk_ids": ["chunk_privacy_01"],
+      "description": "Tests retrieval of constitutional privacy jurisprudence"
+    },
+    {
+      "query_id": "q3",
+      "query": "polluter pays principle environmental damage public trust doctrine",
+      "relevant_chunk_ids": ["chunk_env_01"],
+      "description": "Tests retrieval of environmental liability doctrines"
+    },
+    {
+      "query_id": "q4",
+      "query": "arbitration award set aside patent illegality section 34",
+      "relevant_chunk_ids": ["chunk_arb_01"],
+      "description": "Tests retrieval of arbitration section 34 standards"
+    },
+    {
+      "query_id": "q5",
+      "query": "grant of bail triple test flight risk tampering evidence 439",
+      "relevant_chunk_ids": ["chunk_bail_01"],
+      "description": "Tests retrieval of Section 439 criminal bail criteria"
+    }
+  ]
+}

@@ -3,8 +3,11 @@ import json
 from backend.services.intelligence_service import CaseIntelligenceEngine
 
 def test_analyze_case_mocked(monkeypatch):
+    class MockChunk:
+        text = "Sample judgment text for legal analysis."
+
     class MockDocument:
-        chunks = []
+        chunks = [MockChunk()]
 
     class MockCase:
         id = 1

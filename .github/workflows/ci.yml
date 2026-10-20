@@ -10,10 +10,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python 3.11
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         
@@ -21,12 +21,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest httpx
         
-    - name: Run Pytest (Security & Auth)
+    - name: Run Backend Tests
+      env:
+        PYTHONPATH: .
       run: |
-        pytest backend/tests/test_auth.py
-        pytest backend/tests/test_rag.py
+        pytest backend/tests/
         
     - name: Run Evaluation Gate
       env:

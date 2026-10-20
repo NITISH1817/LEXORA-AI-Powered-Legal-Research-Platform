@@ -53,12 +53,18 @@ def extract_text_from_docx(file_path: str) -> List[Dict]:
     page_number = 1
     current_paragraphs = []
 
-    all_paragraphs = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    # Extract paragraphs and tables
+    all_elements = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    for table in doc.tables:
+        for row in table.rows:
+            row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+            if row_cells:
+                all_elements.append(" | ".join(row_cells))
 
-    for i, para_text in enumerate(all_paragraphs):
-        current_paragraphs.append(para_text)
+    for i, elem_text in enumerate(all_elements):
+        current_paragraphs.append(elem_text)
 
-        if len(current_paragraphs) >= PARAS_PER_PAGE or i == len(all_paragraphs) - 1:
+        if len(current_paragraphs) >= PARAS_PER_PAGE or i == len(all_elements) - 1:
             combined = "\n".join(current_paragraphs)
             word_count = len(combined.split())
             pages.append({
@@ -71,7 +77,7 @@ def extract_text_from_docx(file_path: str) -> List[Dict]:
             current_paragraphs = []
 
     if not pages:
-        # Document has no extractable paragraphs
+        # Document has no extractable paragraphs or tables
         pages.append({
             "page_number": 1,
             "text": "",
@@ -101,11 +107,16 @@ def extract_text_from_docx_bytes(file_bytes: bytes) -> List[Dict]:
     pages = []
     page_number = 1
     current_paragraphs = []
-    all_paragraphs = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    all_elements = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    for table in doc.tables:
+        for row in table.rows:
+            row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+            if row_cells:
+                all_elements.append(" | ".join(row_cells))
 
-    for i, para_text in enumerate(all_paragraphs):
-        current_paragraphs.append(para_text)
-        if len(current_paragraphs) >= PARAS_PER_PAGE or i == len(all_paragraphs) - 1:
+    for i, elem_text in enumerate(all_elements):
+        current_paragraphs.append(elem_text)
+        if len(current_paragraphs) >= PARAS_PER_PAGE or i == len(all_elements) - 1:
             combined = "\n".join(current_paragraphs)
             word_count = len(combined.split())
             pages.append({

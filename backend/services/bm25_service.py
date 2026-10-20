@@ -40,21 +40,34 @@ class BM25Service:
         self.build_bm25_from_corpus()
 
     def search(self, query: str, top_k: int = 10, filters: dict = None):
+        if not query or not query.strip():
+            return []
         if not self.bm25_model or not self.bm25_corpus:
             return []
             
         tokenized_query = query.lower().split()
-        scores = self.bm25_model.get_scores(tokenized_query)
+        if not tokenized_query:
+            return []
+            
+        try:
+            scores = self.bm25_model.get_scores(tokenized_query)
+        except Exception:
+            return []
         
         doc_scores = list(zip(self.bm25_corpus, scores))
         
         if filters:
             filtered_doc_scores = []
             for doc, score in doc_scores:
-                meta = doc["metadata"]
+                meta = doc.get("metadata", {})
                 match = True
                 for k, v in filters.items():
-                    if meta.get(k) != v:
+                    val = meta.get(k)
+                    if isinstance(v, (list, tuple, set)):
+                        if val not in v:
+                            match = False
+                            break
+                    elif val != v:
                         match = False
                         break
                 if match:
@@ -63,12 +76,13 @@ class BM25Service:
             
         doc_scores.sort(key=lambda x: x[1], reverse=True)
         
+        top_k = max(1, min(100, top_k))
         parsed_results = []
         for doc, score in doc_scores[:top_k]:
             if score > 0:
                 parsed_results.append({
                     "id": doc["id"],
-                    "score": score,
+                    "score": float(score),
                     "metadata": doc["metadata"],
                     "text": doc["text"],
                     "source": "keyword"

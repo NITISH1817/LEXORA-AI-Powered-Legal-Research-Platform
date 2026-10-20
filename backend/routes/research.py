@@ -4,6 +4,8 @@ from typing import List
 from datetime import datetime, timezone
 import json
 
+import logging
+
 from backend.database import get_db
 from backend.models.domain import (
     ResearchSession, ResearchCase, ResearchEvidence, ResearchNote, Case, User
@@ -14,9 +16,11 @@ from backend.schemas.domain import (
 )
 from backend.dependencies import get_current_user
 
+logger = logging.getLogger("lexora.routes.research")
 router = APIRouter(prefix="/api/research", tags=["Research Session"])
 
 @router.post("", response_model=ResearchSessionSchema)
+@router.post("/", response_model=ResearchSessionSchema)
 def create_session(data: ResearchSessionCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     session = ResearchSession(
         title=data.title,
@@ -29,6 +33,7 @@ def create_session(data: ResearchSessionCreate, db: Session = Depends(get_db), c
     return session
 
 @router.get("", response_model=List[ResearchSessionSchema])
+@router.get("/", response_model=List[ResearchSessionSchema])
 def get_sessions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Only return the user's sessions unless admin
     query = db.query(ResearchSession)
@@ -58,6 +63,15 @@ def add_case(session_id: int, data: ResearchCaseCreate, db: Session = Depends(ge
     if not session or (session.user_id != current_user.id and current_user.role != "ADMIN"):
         raise HTTPException(status_code=404, detail="Session not found")
     
+    target_case = db.query(Case).filter(Case.id == data.case_id).first()
+    if not target_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    if current_user.role != "ADMIN" and target_case.documents:
+        for doc in target_case.documents:
+            if doc.owner_id is not None and doc.owner_id != current_user.id:
+                raise HTTPException(status_code=404, detail="Case not found")
+
     # check if already added
     existing = db.query(ResearchCase).filter(
         ResearchCase.session_id == session_id,
@@ -77,6 +91,15 @@ def add_evidence(session_id: int, data: ResearchEvidenceCreate, db: Session = De
     if not session or (session.user_id != current_user.id and current_user.role != "ADMIN"):
         raise HTTPException(status_code=404, detail="Session not found")
     
+    target_case = db.query(Case).filter(Case.id == data.case_id).first()
+    if not target_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    if current_user.role != "ADMIN" and target_case.documents:
+        for doc in target_case.documents:
+            if doc.owner_id is not None and doc.owner_id != current_user.id:
+                raise HTTPException(status_code=404, detail="Case not found")
+
     re = ResearchEvidence(
         session_id=session_id,
         case_id=data.case_id,
@@ -96,6 +119,15 @@ def add_note(session_id: int, data: ResearchNoteCreate, db: Session = Depends(ge
     if not session or (session.user_id != current_user.id and current_user.role != "ADMIN"):
         raise HTTPException(status_code=404, detail="Session not found")
     
+    if data.reference_case_id:
+        target_case = db.query(Case).filter(Case.id == data.reference_case_id).first()
+        if not target_case:
+            raise HTTPException(status_code=404, detail="Referenced case not found")
+        if current_user.role != "ADMIN" and target_case.documents:
+            for doc in target_case.documents:
+                if doc.owner_id is not None and doc.owner_id != current_user.id:
+                    raise HTTPException(status_code=404, detail="Referenced case not found")
+
     rn = ResearchNote(
         session_id=session_id,
         content=data.content,
@@ -132,4 +164,5 @@ def generate_brief(session_id: int, db: Session = Depends(get_db), current_user:
         brief = generate_research_brief(session.research_question, cases, evidence_items)
         return {"brief": brief}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error generating brief for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Research brief generation failed.")

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Scale, ChevronRight, FileText, CheckCircle2, Bookmark, Share2, Download, AlertCircle, TrendingUp, Filter, Clock } from 'lucide-react';
+import { Scale, FileText, CheckCircle2, Bookmark, Share2, Download, TrendingUp, Clock, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CaseTimeline from './CaseTimeline';
 
@@ -209,29 +209,11 @@ const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({ caseData, onViewSou
              </div>
           )}
 
-          {activeTab === 'Timeline' && (
-             <div className="max-w-2xl relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-700 before:to-transparent">
-                {caseData.timeline?.map((event: any, i: number) => (
-                   <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-8">
-                     <div className="flex items-center justify-center w-10 h-10 rounded-full border border-slate-700 bg-slate-900 text-slate-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                       <History size={16}/>
-                     </div>
-                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-lg border border-slate-700 bg-slate-900/50 shadow">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="text-primary font-bold text-xs">{event.event_date}</div>
-                        </div>
-                        <div className="text-sm text-slate-300">{event.event_description}</div>
-                     </div>
-                   </div>
-                ))}
-                {(!caseData.timeline || caseData.timeline.length === 0) && <p className="text-textMuted text-sm ml-12">No timeline events extracted.</p>}
-             </div>
+            </div>
           )}
-
-        </motion.div>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  };
 
-export default CaseIntelligence;
+  export default CaseIntelligence;

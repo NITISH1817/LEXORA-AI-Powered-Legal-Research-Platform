@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "plan_name": "LEXORA Legal Benchmark Expansion Plan (v3.0.0-PROPOSED)",
+    "target_release": "v3.0.0",
+    "target_query_count": 160,
+    "target_passage_count": 52,
+    "domains": [
+      "Constitutional & Human Rights (Articles 14, 19, 21, 32)",
+      "Commercial & Arbitration (ICA Sec 73/74, A&C Act Sec 34/37)",
+      "Insolvency & Bankruptcy (IBC Sec 7, 9, 14, 31, 53)",
+      "Taxation & Administrative Law (CGST Act, Natural Justice)"
+    ],
+    "courts": [
+      "Supreme Court of India (Constitution & Division Benches)",
+      "Delhi High Court (Commercial Division)",
+      "Bombay High Court (Appellate Jurisdiction)",
+      "National Company Law Appellate Tribunal (NCLAT)"
+    ],
+    "annotation_methodology": "Independent Dual Legal Verification with Senior Adjudication (Cohen's Kappa >= 0.85)",
+    "split_distribution": {
+      "dev": 32,
+      "val": 48,
+      "test": 80
+    }
+  },
+  "category_targets": {
+    "STATUTORY_INTERPRETATION": { "target_count": 22, "description": "Statutory provisions, strict vs purposive construction" },
+    "HOLDING_VS_SUBMISSION": { "target_count": 22, "description": "Distinguishing court holdings from party arguments" },
+    "MULTI_PASSAGE_SYNTHESIS": { "target_count": 26, "description": "Synthesizing principles across multiple judgments or sections" },
+    "PRECEDENT_RELATIONSHIP": { "target_count": 20, "description": "Explicit relationships: OVERRULES, FOLLOWS, DISTINGUISHES" },
+    "CONFLICT_AND_DISTINCTION": { "target_count": 16, "description": "Nuanced tension without express overruling" },
+    "TEMPORAL_PRECISION": { "target_count": 16, "description": "Exact, approximate, range, and unknown date reasoning" },
+    "NEGATIVE_CONTROL_ABSTENTION": { "target_count": 16, "description": "Unanswerable questions with plausible false premises" },
+    "OCR_NOISE_AND_INCOMPLETE": { "target_count": 12, "description": "Degraded OCR scans and incomplete passages" },
+    "PROCEDURAL_FACTS": { "target_count": 10, "description": "Procedural postures, decrees, and maintainability" }
+  },
+  "sample_curated_expansion_items": [
+    {
+      "id": "exp_ibc_001",
+      "subject_area": "Insolvency & Bankruptcy",
+      "court_level": "Supreme Court of India",
+      "category": "STATUTORY_INTERPRETATION",
+      "split": "val",
+      "question": "Under Section 14 of the Insolvency and Bankruptcy Code 2016, does the statutory moratorium prohibit proceedings under Section 138 of the Negotiable Instruments Act against the corporate debtor and its directors?",
+      "expected_answer": "In P. Mohanraj v. Shah Brothers ISPAT Pvt. Ltd. (2021), the Supreme Court held that the moratorium under Section 14(1)(a) IBC applies to proceedings under Section 138/141 of the Negotiable Instruments Act against the corporate debtor. However, natural persons such as directors and signatories remain liable and proceedings against them may continue.",
+      "required_factual_points": [
+        "Section 14(1)(a) moratorium applies to proceedings under Section 138 Negotiable Instruments Act against the corporate debtor",
+        "Natural persons including directors and signatories are not protected by Section 14 moratorium and remain personally liable"
+      ],
+      "required_citations": [
+        "P. Mohanraj v. Shah Brothers ISPAT Pvt. Ltd. (2021) 6 SCC 258"
+      ],
+      "relevant_chunk_ids": { "chunk_ibc_mohanraj_01": 3, "chunk_statute_ibc_sec14": 2 },
+      "is_unanswerable": false,
+      "annotation_metadata": {
+        "primary_annotator": "Adv_AK_DelhiBar",
+        "secondary_verifier": "Adv_RS_MumbaiBar",
+        "adjudicator": "SrAdv_VM",
+        "agreement_status": "FULL_AGREEMENT"
+      }
+    },
+    {
+      "id": "exp_ibc_002",
+      "subject_area": "Insolvency & Bankruptcy",
+      "court_level": "Supreme Court of India",
+      "category": "HOLDING_VS_SUBMISSION",
+      "split": "test",
+      "question": "In Swiss Ribbons v. Union of India, did the Supreme Court accept the petitioner's argument that financial creditors and operational creditors must be treated equally in resolution plans?",
+      "expected_answer": "No. The Supreme Court rejected the petitioners' contention and held that financial creditors and operational creditors are not similarly situated. The classification between financial and operational creditors is based on intelligible differentia and does not violate Article 14 of the Constitution.",
+      "required_factual_points": [
+        "The Supreme Court rejected the argument for identical treatment of financial and operational creditors",
+        "The court held the classification between financial and operational creditors is valid under Article 14 based on intelligible differentia"
+      ],
+      "required_citations": [
+        "Swiss Ribbons Pvt. Ltd. v. Union of India (2019) 4 SCC 17"
+      ],
+      "relevant_chunk_ids": { "chunk_ibc_swissribbons_02": 3 },
+      "is_unanswerable": false,
+      "annotation_metadata": {
+        "primary_annotator": "Adv_RS_MumbaiBar",
+        "secondary_verifier": "Adv_AK_DelhiBar",
+        "adjudicator": "SrAdv_VM",
+        "agreement_status": "FULL_AGREEMENT"
+      }
+    },
+    {
+      "id": "exp_tax_001",
+      "subject_area": "Taxation & Administrative Law",
+      "court_level": "Supreme Court of India",
+      "category": "STATUTORY_INTERPRETATION",
+      "split": "test",
+      "question": "In Union of India v. Mohit Minerals Pvt. Ltd., what was the Supreme Court's ruling regarding the levy of Integrated GST on ocean freight paid by foreign exporters under reverse charge?",
+      "expected_answer": "In Union of India v. Mohit Minerals Pvt. Ltd. (2022), the Supreme Court struck down the IGST notifications levying 5% tax on ocean freight for CIF imports under the reverse charge mechanism. The court held that Indian importers cannot be subjected to a separate IGST levy on ocean freight as it violates the scheme of composite supply under Section 2(30) and Section 8 of the CGST Act.",
+      "required_factual_points": [
+        "The Supreme Court struck down the IGST levy on ocean freight under reverse charge for CIF contracts",
+        "Separate levy on ocean freight was held to violate the statutory concept of composite supply under the CGST Act"
+      ],
+      "required_citations": [
+        "Union of India v. Mohit Minerals Pvt. Ltd. (2022) 10 SCC 700"
+      ],
+      "relevant_chunk_ids": { "chunk_tax_mohit_01": 3, "chunk_statute_cgst_sec8": 2 },
+      "is_unanswerable": false,
+      "annotation_metadata": {
+        "primary_annotator": "Adv_TN_TaxSpecialist",
+        "secondary_verifier": "Adv_AK_DelhiBar",
+        "adjudicator": "SrAdv_VM",
+        "agreement_status": "FULL_AGREEMENT"
+      }
+    },
+    {
+      "id": "exp_abs_001",
+      "subject_area": "Arbitration & Commercial Law",
+      "court_level": "Supreme Court of India",
+      "category": "NEGATIVE_CONTROL_ABSTENTION",
+      "split": "test",
+      "question": "According to the Supreme Court judgment in Hindustan Power v. Reliance Infra (2024), does Section 34 of the Arbitration Act permit courts to substitute an arbitral tribunal's damages computation with a statutory rate of 18%?",
+      "expected_answer": "LEXORA must abstain: The referenced case 'Hindustan Power v. Reliance Infra (2024)' does not exist in authoritative Supreme Court jurisprudence, and under established Section 34 law (e.g. NHAI v. M. Hakeem), courts have no power to modify or rewrite arbitral awards or substitute damages calculations.",
+      "required_factual_points": [],
+      "required_citations": [],
+      "forbidden_claims": [
+        "Hindustan Power v. Reliance Infra held that courts may substitute 18% interest",
+        "Section 34 permits courts to rewrite awards"
+      ],
+      "relevant_chunk_ids": {},
+      "is_unanswerable": true,
+      "expected_abstention_phrase": "Insufficient evidence or authority does not support premise",
+      "annotation_metadata": {
+        "primary_annotator": "Adv_AK_DelhiBar",
+        "secondary_verifier": "Adv_RS_MumbaiBar",
+        "adjudicator": "SrAdv_VM",
+        "agreement_status": "FULL_AGREEMENT"
+      }
+    },
+    {
+      "id": "exp_ocr_001",
+      "subject_area": "Constitutional & Human Rights",
+      "court_level": "Supreme Court of India",
+      "category": "OCR_NOISE_AND_INCOMPLETE",
+      "split": "dev",
+      "question": "In the historical 1950 decision of A.K. Gopalan v. State of Madras, did the Supreme Court adopt a broad due process interpretation of Article 21 or a literal 'procedure established by law' interpretation?",
+      "expected_answer": "In A.K. Gopalan v. State of Madras (1950), the majority of the Supreme Court held that 'procedure established by law' in Article 21 meant procedure enacted by a competent legislature, explicitly refusing to incorporate American substantive due process. This literal approach was subsequently overruled in Maneka Gandhi (1978).",
+      "required_factual_points": [
+        "A.K. Gopalan adopted a literal 'procedure established by law' reading",
+        "The court rejected substantive due process in Article 21 until Maneka Gandhi overruled it"
+      ],
+      "required_citations": [
+        "A.K. Gopalan v. State of Madras 1950 SCR 88"
+      ],
+      "relevant_chunk_ids": { "chunk_ocr_gopalan_historical": 2, "chunk_maneka_ratio": 2 },
+      "ocr_noise_injected": true,
+      "is_unanswerable": false,
+      "annotation_metadata": {
+        "primary_annotator": "Adv_AK_DelhiBar",
+        "secondary_verifier": "Adv_RS_MumbaiBar",
+        "adjudicator": "SrAdv_VM",
+        "agreement_status": "FULL_AGREEMENT"
+      }
+    }
+  ]
+}

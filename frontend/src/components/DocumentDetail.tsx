@@ -1,8 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import {
-  FileText, Clock, FileWarning, Scale, Search, History, CheckCircle2,
-  ChevronRight, ArrowLeft, Loader2, PlayCircle, Eye, Activity, Database
+  FileText, Clock, FileWarning, Scale, Search, History,
+  ArrowLeft, Loader2, Eye, Database
 } from 'lucide-react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,8 +9,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem('access_token');
-  return token ? { Authorization: "Bearer $token" } : {};
+  const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 export default function DocumentDetail() {
@@ -23,7 +22,7 @@ export default function DocumentDetail() {
   useEffect(() => {
     const fetchDoc = async () => {
       try {
-        const res = await axios.get("${API_URL}/api/documents/", {
+        const res = await axios.get(`${API_URL}/api/documents/${id}`, {
           headers: getAuthHeader()
         });
         setDoc(res.data);
@@ -77,11 +76,11 @@ export default function DocumentDetail() {
               <div className="px-2.5 py-1 rounded border border-slate-700 bg-slate-800 text-xs text-slate-300 font-mono uppercase">
                 {doc.document_type || 'Unknown Type'}
               </div>
-              <div className={"px-2.5 py-1 rounded-full text-xs font-semibold $
+              <div className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                 doc.status === 'READY' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
                 doc.status === 'FAILED' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
                 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-              "}>
+              }`}>
                 {doc.status}
               </div>
             </div>
@@ -94,14 +93,14 @@ export default function DocumentDetail() {
           
           <div className="flex gap-3">
             <button
-              onClick={() => navigate("/documents//source")}
+              onClick={() => navigate(`/documents/${id}/source`)}
               className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-lg transition-colors shadow-sm"
             >
               <Eye size={16} />
               View Source Text
             </button>
             <button
-              onClick={() => navigate("/research?doc=")}
+              onClick={() => navigate(`/research?doc=${id}`)}
               className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-lg transition-all shadow-lg shadow-blue-500/20"
             >
               <Search size={16} />
@@ -175,10 +174,10 @@ export default function DocumentDetail() {
               <div className="relative pl-3 border-l border-slate-700/50 space-y-6">
                 {doc.processing_logs.map((log: any, idx: number) => (
                   <div key={idx} className="relative">
-                    <div className={"absolute -left-[17px] top-1 w-2 h-2 rounded-full $
+                    <div className={`absolute -left-[17px] top-1 w-2 h-2 rounded-full ${
                       log.status === 'SUCCESS' ? 'bg-emerald-500' :
                       log.status === 'FAILED' ? 'bg-red-500' : 'bg-slate-500'
-                    "} />
+                    }`} />
                     <p className="text-xs font-bold text-slate-300 uppercase tracking-wider">{log.stage}</p>
                     <p className="text-xs text-slate-500 mt-1">{new Date(log.timestamp).toLocaleTimeString()}</p>
                     {log.message && (

@@ -75,7 +75,7 @@ def test_compare_cases_success(monkeypatch):
             return MockResponse()
 
     import backend.services.compare_service
-    backend.services.compare_service.model = MockModel()
+    monkeypatch.setattr(backend.services.compare_service, "model", MockModel())
 
     db = MockDB()
     result = compare_cases_service(db, [1, 2])

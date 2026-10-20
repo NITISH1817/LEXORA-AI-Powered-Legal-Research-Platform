@@ -26,6 +26,23 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
+def get_optional_current_user(token: str = Depends(oauth2_scheme_optional), db: Session = Depends(get_db)):
+    """Extract authenticated user if bearer token is provided; otherwise return None without raising 401."""
+    if not token:
+        return None
+    payload = decode_access_token(token)
+    if payload is None:
+        return None
+    email: str = payload.get("sub")
+    if email is None:
+        return None
+    user = db.query(User).filter(User.email == email).first()
+    if user is None or not user.is_active:
+        return None
+    return user
+
 def require_role(allowed_roles: list):
     def role_checker(current_user: User = Depends(get_current_user)):
         if current_user.role not in allowed_roles:

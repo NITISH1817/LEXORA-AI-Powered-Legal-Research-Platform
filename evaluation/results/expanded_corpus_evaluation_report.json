@@ -1,0 +1,70 @@
+{
+  "timestamp": "2026-10-20T13:26:41.288143+00:00",
+  "mode": "expanded_corpus",
+  "is_compatible": true,
+  "gate_decision": "APPROVED (Expanded-Corpus Coverage Baseline Established)",
+  "gate_passed": true,
+  "coverage_expansion_notes": "Candidate evaluated across corpus expansion (+32 passages, +99 queries). Performance variations reflect expanded legal domain difficulty and new test cases rather than implementation degradation.",
+  "baseline_run": {
+    "timestamp": "2026-10-20T11:27:33.337215+00:00",
+    "version": "2.0.0",
+    "mode": "optimized",
+    "corpus_size": 20,
+    "total_queries": 61
+  },
+  "candidate_run": {
+    "timestamp": "2026-10-20T13:26:08.617741+00:00",
+    "version": "3.0.0",
+    "mode": "optimized",
+    "corpus_size": 52,
+    "total_queries": 160
+  },
+  "metric_checks": [
+    {
+      "metric": "Recall@3 (Expanded)",
+      "status": "PASS",
+      "baseline": 0.9848,
+      "candidate": 0.9522,
+      "diff": -0.03259999999999996
+    },
+    {
+      "metric": "Hit Rate@3 (Expanded)",
+      "status": "PASS",
+      "baseline": 1.0,
+      "candidate": 0.9926,
+      "diff": -0.007399999999999962
+    },
+    {
+      "metric": "Claim Support (Ans Macro)",
+      "status": "PASS",
+      "baseline": 0.0,
+      "candidate": 0.827,
+      "diff": 0.827
+    },
+    {
+      "metric": "Citation Support (Ans Macro)",
+      "status": "PASS",
+      "baseline": 0.0,
+      "candidate": 0.8719,
+      "diff": 0.8719
+    },
+    {
+      "metric": "Citation Validity",
+      "status": "PASS",
+      "baseline": 1.0,
+      "candidate": 1.0,
+      "diff": 0.0
+    },
+    {
+      "metric": "Abstention Accuracy",
+      "status": "PASS",
+      "baseline": 1.0,
+      "candidate": 1.0,
+      "diff": 0.0
+    }
+  ],
+  "violations_count": 0,
+  "violations_list": [],
+  "query_level_regressions_count": 0,
+  "query_level_regressions": []
+}

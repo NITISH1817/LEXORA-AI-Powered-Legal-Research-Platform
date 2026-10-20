@@ -220,8 +220,10 @@ __marimo__/
 # Legal Workbench specific
 chroma_db/
 uploads/
+storage/
 node_modules/
 dataset/
+scratch/
 
 *.db
 *.sqlite

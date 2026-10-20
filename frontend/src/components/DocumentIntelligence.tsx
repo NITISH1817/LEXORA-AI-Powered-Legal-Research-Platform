@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FileText, Upload, Clock, CheckCircle2, XCircle, AlertTriangle,
-  Loader2, ChevronRight, Trash2, RefreshCw, Eye, Search, Scale,
+  FileText, Upload, Clock, CheckCircle2, XCircle,
+  Loader2, Trash2, RefreshCw, Eye, Search, Scale,
   Activity, BarChart3, FileWarning, FileScan
 } from 'lucide-react';
 import axios from 'axios';
@@ -11,8 +11,8 @@ import DocumentUpload from './DocumentUpload';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem('access_token');
-  return token ? { Authorization: "Bearer $token" } : {};
+  const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType; pulse?: boolean }> = {
@@ -61,7 +61,7 @@ function StatusPill({ status, progress, currentStage }: { status: string; progre
 
   return (
     <div className="flex flex-col gap-1">
-      <div className={"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold $cfg.color $cfg.bg border border-current/20"}>
+      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.color} ${cfg.bg} border border-current/20`}>
         <Icon size={11} className={isActive ? 'animate-spin' : ''} />
         {cfg.label}
       </div>
@@ -71,7 +71,7 @@ function StatusPill({ status, progress, currentStage }: { status: string; progre
             <motion.div
               className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full"
               initial={{ width: 0 }}
-              animate={{ width: "%" }}
+              animate={{ width: `${Math.round(progress)}%` }}
               transition={{ duration: 0.5 }}
             />
           </div>
@@ -87,9 +87,9 @@ function StatusPill({ status, progress, currentStage }: { status: string; progre
 
 function formatFileSize(bytes?: number): string {
   if (!bytes) return '—';
-  if (bytes < 1024) return "${bytes} B";
-  if (bytes < 1024 * 1024) return "${(bytes / 1024).toFixed(1)} KB";
-  return "${(bytes / (1024 * 1024)).toFixed(1)} MB";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatDate(dateStr?: string): string {
@@ -98,8 +98,8 @@ function formatDate(dateStr?: string): string {
   const now = new Date();
   const diff = now.getTime() - d.getTime();
   if (diff < 60000) return 'Just now';
-  if (diff < 3600000) return "${Math.floor(diff / 60000)}m ago";
-  if (diff < 86400000) return "${Math.floor(diff / 3600000)}h ago";
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -114,7 +114,7 @@ export default function DocumentIntelligence() {
 
   const fetchDocuments = useCallback(async () => {
     try {
-      const res = await axios.get("${API_URL}/api/documents", {
+      const res = await axios.get(`${API_URL}/api/documents`, {
         headers: getAuthHeader()
       });
       setDocuments(res.data);
@@ -131,13 +131,13 @@ export default function DocumentIntelligence() {
 
     const updates = await Promise.allSettled(
       inProgress.map(doc =>
-        axios.get("${API_URL}/api/documents//status", {
+        axios.get(`${API_URL}/api/documents/${doc.id}/status`, {
           headers: getAuthHeader()
         })
       )
     );
 
-    setDocuments(prev => prev.map((doc, i) => {
+    setDocuments(prev => prev.map((doc) => {
       const idx = inProgress.findIndex(d => d.id === doc.id);
       if (idx === -1) return doc;
       const result = updates[idx];
@@ -175,7 +175,7 @@ export default function DocumentIntelligence() {
     if (!confirm('Delete this document and all its data? This cannot be undone.')) return;
     setDeletingId(id);
     try {
-      await axios.delete("${API_URL}/api/documents/", {
+      await axios.delete(`${API_URL}/api/documents/${id}`, {
         headers: getAuthHeader()
       });
       setDocuments(prev => prev.filter(d => d.id !== id));
@@ -189,7 +189,7 @@ export default function DocumentIntelligence() {
   const handleRetry = async (id: number) => {
     setRetryingId(id);
     try {
-      await axios.post("${API_URL}/api/documents//retry", {}, {
+      await axios.post(`${API_URL}/api/documents/${id}/retry`, {}, {
         headers: getAuthHeader()
       });
       setDocuments(prev => prev.map(d =>
@@ -203,7 +203,7 @@ export default function DocumentIntelligence() {
   };
 
   const handleOpenDocument = (id: number) => {
-    window.location.href = "/documents/";
+    window.location.href = `/documents/${id}`;
   };
 
   const handleUploadComplete = () => {
@@ -277,7 +277,7 @@ export default function DocumentIntelligence() {
                 <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">{label}</span>
                 <Icon size={14} className={color} />
               </div>
-              <div className={"text-2xl font-bold $color"}>{value}</div>
+              <div className={`text-2xl font-bold ${color}`}>{value}</div>
             </div>
           ))}
         </div>
@@ -339,11 +339,11 @@ export default function DocumentIntelligence() {
                   className="grid grid-cols-[2.5fr_1.5fr_0.8fr_1.5fr_1fr_1.2fr] px-6 py-4 border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors items-center"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={"w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 $
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                       doc.document_type === 'pdf' ? 'bg-red-500/10 text-red-400' :
                       doc.document_type === 'docx' ? 'bg-blue-500/10 text-blue-400' :
                       'bg-slate-700 text-slate-400'
-                    "}>
+                    }`}>
                       <FileText size={14} />
                     </div>
                     <div className="min-w-0">
@@ -369,7 +369,7 @@ export default function DocumentIntelligence() {
                   </div>
 
                   <div className="text-sm text-slate-400">
-                    {doc.page_count ? "${doc.page_count}" : '—'}
+                    {doc.page_count ? doc.page_count : '—'}
                   </div>
 
                   <div className="min-w-0">
@@ -429,7 +429,7 @@ export default function DocumentIntelligence() {
         {filtered.length > 0 && (
           <p className="text-center text-slate-600 text-xs mt-4">
             {filtered.length} document{filtered.length !== 1 ? 's' : ''}
-            {searchQuery && " matching ""}
+            {searchQuery && ` matching "${searchQuery}"`}
           </p>
         )}
       </div>
@@ -444,3 +444,4 @@ export default function DocumentIntelligence() {
       </AnimatePresence>
     </div>
   );
+}
