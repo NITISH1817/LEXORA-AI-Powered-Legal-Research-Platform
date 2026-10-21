@@ -385,13 +385,23 @@ class LegalReviewWorkflow:
         })
         from_status = ReviewStatus(current["status"])
 
-        # 3. Senior adjudication permission guard
+        # 3. Senior adjudication permission guard & Anti-Self-Approval
         if to_status == ReviewStatus.DISAGREEMENT_ADJUDICATED or (from_status == ReviewStatus.NEEDS_ADJUDICATION and to_status == ReviewStatus.APPROVED):
             if not profile.has_permission(ReviewerPermission.SENIOR_ADJUDICATE):
                 raise UnauthorizedReviewerError(
                     f"Reviewer '{reviewer_id}' has role '{profile.role.value}', which lacks SENIOR_ADJUDICATOR permission "
                     "required to resolve legal disagreements or adjudicate escalated queries."
                 )
+            # Anti-Self-Approval check: Adjudicator must be independent of the reviewer who requested adjudication
+            for hist in reversed(current.get("review_history", [])):
+                if hist.get("to_status") == ReviewStatus.NEEDS_ADJUDICATION.value:
+                    initiator = hist.get("reviewer_id", "").strip().lower()
+                    if initiator and initiator == reviewer_id.strip().lower():
+                        raise UnauthorizedReviewerError(
+                            f"Reviewer '{reviewer_id}' requested adjudication on query '{query_id}' and cannot self-adjudicate "
+                            "their own contested review. Review policy requires an independent senior adjudicator."
+                        )
+                    break
 
         # 4. Mandatory substantive rationale for terminal decisions
         if to_status in (ReviewStatus.APPROVED, ReviewStatus.REJECTED):

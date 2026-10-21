@@ -229,6 +229,32 @@ class TestRoleBasedReviewerAuthorization:
         assert rec_resolved["status"] == ReviewStatus.DISAGREEMENT_ADJUDICATED.value
         assert rec_resolved["stages"]["disagreement_adjudicated"] is True
 
+    def test_prevent_unauthorized_self_adjudication(self, workflow):
+        """A reviewer who requested adjudication cannot self-adjudicate their own disputed item."""
+        qid = "bench_010_self"
+        # Senior adjudicator acts as initial reviewer raising dispute
+        senior_id = "senior_adjudicator_justice_kaul"
+        workflow.claim_for_review(qid, senior_id)
+        workflow.request_adjudication(qid, senior_id, "Self-identified doctrinal conflict requiring second opinion")
+
+        # The same senior adjudicator cannot self-adjudicate their own escalated dispute
+        with pytest.raises(UnauthorizedReviewerError) as exc_info:
+            workflow.adjudicate_disagreement(
+                qid,
+                adjudicator_id=senior_id,
+                rationale="Attempting to resolve my own dispute"
+            )
+        assert "cannot self-adjudicate their own contested review" in str(exc_info.value)
+
+        # An independent senior adjudicator CAN resolve the dispute
+        independent_senior = "senior_counsel_nariman"
+        res = workflow.adjudicate_disagreement(
+            qid,
+            adjudicator_id=independent_senior,
+            rationale="Independent resolution by Senior Counsel Nariman"
+        )
+        assert res["status"] == ReviewStatus.DISAGREEMENT_ADJUDICATED.value
+
     def test_audit_history_preservation(self, workflow):
         """Every action records benchmark version, item ID, reviewer role, audit event, and appends to history."""
         qid = "bench_011"

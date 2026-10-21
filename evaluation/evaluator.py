@@ -182,21 +182,21 @@ def run_evaluation(
                 "release_gate_status": {
                     "gate_passed": False,
                     "reason": "ZERO_APPROVED_LABELS",
-                    "recommended_action": "Complete human adjudication for priority items in evaluation/PHASE15_CRITICAL_REVIEW_QUEUE.md"
+                    "recommended_action": "Complete human adjudication for priority items in evaluation/PHASE17_CRITICAL_REVIEW_QUEUE.md"
                 }
             }
             with open(report_json_path, 'w', encoding='utf-8') as f:
                 json.dump(insufficient_res, f, indent=2)
 
             with open(report_md_path, 'w', encoding='utf-8') as f:
-                f.write(f"# LEXORA Approved Gold Labels Evaluation Report — Phase 15\n\n")
+                f.write(f"# LEXORA Approved Gold Labels Evaluation Report — Phase 17\n\n")
                 f.write(f"**Execution Timestamp:** `{now_iso}`\n")
                 f.write(f"**Benchmark Dataset:** `{meta.get('benchmark_name')}` (v{meta.get('version')})\n")
                 f.write(f"**Evaluation Scope:** Approved Gold Labels Only (`{split}`)\n")
                 f.write(f"**Evaluation Status:** `INSUFFICIENT_APPROVED_LABELS` (0 Approved Queries)\n\n")
                 f.write("## 1. Evaluation Integrity & Gold Label Status\n\n")
                 f.write("> [!IMPORTANT]\n")
-                f.write("> **Evaluation Integrity Rule (Phase 15 Task 5):** Pending, in-review, and rejected items are strictly excluded from authoritative gold-label scoring. Automated evaluation code cannot approve legal gold labels.\n\n")
+                f.write("> **Evaluation Integrity Rule (Phase 17 Task 6):** Pending, in-review, and rejected items are strictly excluded from authoritative gold-label scoring. Automated evaluation code cannot approve legal gold labels.\n\n")
                 f.write(f"- **Total Benchmark Queries:** {len(raw_queries)}\n")
                 f.write(f"- **Approved Gold Label Queries:** 0 (0.00%)\n")
                 f.write(f"- **Pending Human Legal Review:** {len(raw_queries)} (100.00%)\n")
@@ -208,7 +208,7 @@ def run_evaluation(
                 f.write("- Pending labels have **NOT** been promoted to approved status by automated scripts.\n")
                 f.write("- Retrieval and answer generation have **NOT** been scored against unverified labels.\n\n")
                 f.write("## 3. Required Action Before Authoritative Scoring\n\n")
-                f.write("Qualified human legal practitioners must adjudicate the prioritized items in `evaluation/PHASE15_CRITICAL_REVIEW_QUEUE.md` using the human adjudication workflow (`evaluation/review_workflow.py`). Once items achieve `ReviewStatus.APPROVED` (`GOLD_LABEL_APPROVED`), this report will automatically score retrieval grounding, atomic claim support, and citation validity on the human-verified gold subset.\n")
+                f.write("Qualified human legal practitioners must adjudicate the prioritized items in `evaluation/PHASE17_CRITICAL_REVIEW_QUEUE.md` using the human adjudication workflow (`evaluation/review_workflow.py`). Once items achieve `ReviewStatus.APPROVED` (`GOLD_LABEL_APPROVED`), this report will automatically score retrieval grounding, atomic claim support, and citation validity on the human-verified gold subset.\n")
 
             print(f"[{datetime.now().strftime('%H:%M:%S')}] Approved-labels evaluation: 0 approved queries. Saved limitation report to {report_json_path}")
             return insufficient_res

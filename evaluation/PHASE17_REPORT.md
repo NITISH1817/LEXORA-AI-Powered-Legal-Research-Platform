@@ -16,10 +16,10 @@ Phase 17 executed the operational hardening of the review authorization subsyste
 
 | Metric / Dimension | Phase 16 Baseline | Phase 17 Active Verification | Verification Status & Artifacts |
 | :--- | :---: | :---: | :--- |
-| **Backend Test Suite** | 191 / 191 passing | **205 / 205 passing** | **PASS** (Exit Code `0`, 24.08s across 23 test modules) |
-| **Phase 17 Tests** | N/A | **14 / 14 passing** | **PASS** ([`test_phase17_human_review_and_pilot_activation.py`](file:///d:/AI-Legal-Research-System/backend/tests/test_phase17_human_review_and_pilot_activation.py) in 3.34s) |
-| **Frontend Production Build** | Passing | **Passing** | **PASS** (`tsc -b && vite build` built `dist/` in 1.41s, Exit Code `0`) |
-| **Frontend Code Quality** | 9 warnings, 0 errors | **0 errors, 9 non-blocking warnings** | **PASS** (`oxlint` across 19 source files, Exit Code `0`) |
+| **Backend Test Suite** | 191 / 191 passing | **206 / 206 passing** | **PASS** (Exit Code `0`, 70.37s across 23 test modules) |
+| **Phase 17 Tests** | N/A | **15 / 15 passing** | **PASS** ([`test_phase17_human_review_and_pilot_activation.py`](file:///d:/AI-Legal-Research-System/backend/tests/test_phase17_human_review_and_pilot_activation.py) in 3.49s) |
+| **Frontend Production Build** | Passing | **Passing** | **PASS** (`tsc -b && vite build` built `dist/` in 1.91s, Exit Code `0`) |
+| **Frontend Code Quality** | 9 warnings, 0 errors | **0 errors, 0 warnings** | **PASS** (`oxlint` across 37 source files with 116 rules, Exit Code `0`) |
 | **Benchmark Catalog Size** | 52 passages, 160 queries | **52 passages, 160 queries** | **VERIFIED** ([`legal_benchmark_v3.json`](file:///d:/AI-Legal-Research-System/evaluation/datasets/legal_benchmark_v3.json): 70 dev, 90 held-out) |
 | **Reviewer Authorization** | Substring filter (flawed) | **Role-Based Registry** | **HARDENED** (`ReviewerRegistry` eliminates false positives for `adv_abbott`, etc.) |
 | **Pilot Registration Access** | Documented disabled | **Backend Enforced** | **VERIFIED** (`PILOT_REGISTRATION_RESTRICTED = True`, invite code required, admin provisioning) |
@@ -118,7 +118,7 @@ Every verification step was executed locally and passed with clean exit codes:
 .\venv\Scripts\python -m pytest backend/tests/
 ```
 - **Exit Code:** `0`
-- **Output:** **`205 passed in 24.08s`** across 23 test modules.
+- **Output:** **`206 passed in 70.37s`** across 23 test modules.
 - **Failures:** `0`
 
 ### 7.2 Phase 17 Review Authorization & Access Tests
@@ -126,7 +126,7 @@ Every verification step was executed locally and passed with clean exit codes:
 .\venv\Scripts\python -m pytest backend/tests/test_phase17_human_review_and_pilot_activation.py -v
 ```
 - **Exit Code:** `0`
-- **Output:** **`14 passed in 3.34s`**
+- **Output:** **`15 passed in 3.49s`**
 - **Failures:** `0`
 
 ### 7.3 Frontend Production Build
@@ -134,7 +134,7 @@ Every verification step was executed locally and passed with clean exit codes:
 cd frontend && npm run build
 ```
 - **Exit Code:** `0`
-- **Output:** `tsc -b && vite build` built production bundle in 1.41s.
+- **Output:** `tsc -b && vite build` built production bundle in 1.91s.
 - **Failures:** `0`
 
 ### 7.4 Frontend Linter
@@ -142,7 +142,7 @@ cd frontend && npm run build
 cd frontend && npm run lint
 ```
 - **Exit Code:** `0`
-- **Output:** `oxlint` reported `0 errors, 9 non-blocking warnings` on 19 files.
+- **Output:** `oxlint` reported `0 errors, 0 warnings` on 37 source files with 116 rules.
 - **Failures:** `0`
 
 ### 7.5 Approved-Only Evaluator Gate

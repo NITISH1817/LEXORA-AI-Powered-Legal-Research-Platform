@@ -228,3 +228,6 @@ scratch/
 *.db
 *.sqlite
 *.sqlite3
+backups/
+*.tar.gz
+*.tar.gz.sha256

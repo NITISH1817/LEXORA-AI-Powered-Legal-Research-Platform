@@ -1,23 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Scale, FileText, CheckCircle2, Bookmark,
-  TrendingUp, Clock, BookOpen, AlertCircle, Loader2, Sparkles
+  TrendingUp, Clock, BookOpen, AlertCircle, Sparkles
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CaseTimeline from './CaseTimeline';
 import SafeMarkdown from './common/SafeMarkdown';
 import apiClient, { getErrorMessage } from '../api/client';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
 
 interface CaseIntelligenceProps {
   caseData: any;
   onViewSource: (sourceId: string) => void;
   onRefreshCase?: () => void;
+  onBookmarkCase?: (caseId: number) => void;
+  isBookmarked?: boolean;
 }
 
 export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
   caseData,
   onViewSource,
   onRefreshCase,
+  onBookmarkCase,
+  isBookmarked = false,
 }) => {
   const [activeTab, setActiveTab] = useState('Executive');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -30,21 +36,17 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
     'Arguments',
     'Reasoning',
     'Principles',
+    'Passages',
     'Outcome',
     'Timeline',
   ];
 
-  useEffect(() => {
-    setActiveTab('Executive');
-    setAnalysisError(null);
-  }, [caseData?.id]);
-
   if (!caseData) {
     return (
-      <div className="h-full flex items-center justify-center p-8 text-slate-500 bg-[#080c14]">
+      <div className="h-full flex items-center justify-center p-8 text-slate-500 bg-[#080c14] font-sans">
         <div className="text-center">
           <Scale size={36} className="mx-auto mb-3 opacity-30 text-blue-400" />
-          <p className="text-sm">Select an authority or case to view its intelligence profile.</p>
+          <p className="text-sm">Select an authority or case to view its intelligence dossier.</p>
         </div>
       </div>
     );
@@ -68,7 +70,7 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
   const isAnalyzed = caseData.analysis_status === 'COMPLETE' || !!caseData.executive_summary;
 
   return (
-    <div className="flex flex-col h-full bg-[#080c14] border-l border-slate-800/80 overflow-hidden">
+    <div className="flex flex-col h-full bg-[#080c14] border-l border-slate-800/80 overflow-hidden font-sans">
       {/* Header Profile */}
       <div className="p-6 border-b border-slate-800/80 bg-slate-900/40">
         <div className="flex justify-between items-start gap-4 mb-3">
@@ -77,13 +79,13 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
               <Scale size={14} />
               <span>Case Intelligence Dossier</span>
               {isAnalyzed ? (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                <Badge variant="success" size="sm">
                   Indexed
-                </span>
+                </Badge>
               ) : (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
+                <Badge variant="warning" size="sm">
                   Pending Analysis
-                </span>
+                </Badge>
               )}
             </div>
 
@@ -114,32 +116,28 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
 
           <div className="flex gap-2 shrink-0">
             {!isAnalyzed && (
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleAnalyze}
-                disabled={isAnalyzing}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-md shadow transition-colors disabled:opacity-50"
+                isLoading={isAnalyzing}
+                icon={<Sparkles size={13} />}
               >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 size={13} className="animate-spin" />
-                    <span>Analyzing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={13} />
-                    <span>Analyze Case</span>
-                  </>
-                )}
-              </button>
+                Analyze Case
+              </Button>
             )}
-            <button
-              type="button"
-              className="p-2 bg-slate-800/80 hover:bg-slate-750 text-slate-400 hover:text-white rounded-md border border-slate-700/60 transition-colors"
-              title="Bookmark Case"
-            >
-              <Bookmark size={15} />
-            </button>
+
+            {onBookmarkCase && (
+              <Button
+                variant={isBookmarked ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => onBookmarkCase(caseData.id)}
+                icon={<Bookmark size={14} />}
+                title={isBookmarked ? 'Saved in active research session' : 'Save to active research session'}
+              >
+                {isBookmarked ? 'Saved' : 'Save'}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -158,7 +156,10 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
         )}
 
         {analysisError && (
-          <div className="mt-3 p-2.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+          <div
+            role="alert"
+            className="mt-3 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2"
+          >
             <AlertCircle size={14} className="shrink-0" />
             <span>{analysisError}</span>
           </div>
@@ -204,7 +205,7 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
             {activeTab === 'Executive' && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 <div className="p-6 bg-slate-900/50 rounded-xl border border-slate-800 shadow-xl relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                  <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
                   <h3 className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3 flex items-center gap-2">
                     <TrendingUp size={14} /> Executive Legal Synthesis
                   </h3>
@@ -267,18 +268,15 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
                   {caseData.facts?.map((fact: any, i: number) => (
                     <div
                       key={i}
-                      className="p-4 rounded-lg bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-colors flex gap-4 items-start"
+                      className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-colors flex gap-4 items-start"
                     >
                       <div className="w-24 shrink-0">
-                        <span
-                          className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                            fact.fact_type === 'Material'
-                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                              : 'bg-slate-800 text-slate-400'
-                          }`}
+                        <Badge
+                          variant={fact.fact_type === 'Material' ? 'info' : 'neutral'}
+                          size="sm"
                         >
                           {fact.fact_type || 'FACT'}
-                        </span>
+                        </Badge>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-slate-200 leading-relaxed font-serif">{fact.description}</p>
@@ -315,7 +313,7 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
                   {caseData.issues?.map((issue: any, i: number) => (
                     <div
                       key={i}
-                      className="p-4 rounded-lg bg-slate-900/40 border border-slate-800 flex gap-3 items-start"
+                      className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 flex gap-3 items-start"
                     >
                       <span className="font-mono text-xs font-bold text-blue-400 mt-0.5">Q{i + 1}.</span>
                       <p className="text-sm text-slate-200 leading-relaxed font-serif">{issue.issue_text}</p>
@@ -353,7 +351,7 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
                     {caseData.arguments?.Petitioner?.map((arg: any, i: number) => (
                       <div
                         key={i}
-                        className="text-xs text-slate-300 p-3.5 bg-slate-900/40 rounded-lg border border-slate-800/80 border-l-2 border-l-blue-500 leading-relaxed font-serif"
+                        className="text-xs text-slate-300 p-3.5 bg-slate-900/40 rounded-xl border border-slate-800/80 border-l-2 border-l-blue-500 leading-relaxed font-serif"
                       >
                         {arg.argument_text}
                       </div>
@@ -378,7 +376,7 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
                     {caseData.arguments?.Respondent?.map((arg: any, i: number) => (
                       <div
                         key={i}
-                        className="text-xs text-slate-300 p-3.5 bg-slate-900/40 rounded-lg border border-slate-800/80 border-l-2 border-l-rose-500 leading-relaxed font-serif"
+                        className="text-xs text-slate-300 p-3.5 bg-slate-900/40 rounded-xl border border-slate-800/80 border-l-2 border-l-rose-500 leading-relaxed font-serif"
                       >
                         {arg.argument_text}
                       </div>
@@ -423,13 +421,13 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
                   {caseData.principles?.map((principle: any, i: number) => (
                     <div
                       key={i}
-                      className="p-4 rounded-lg bg-slate-900/40 border border-slate-800 border-l-2 border-l-purple-500"
+                      className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 border-l-2 border-l-purple-500"
                     >
                       <div className="text-sm text-purple-200 font-medium mb-1.5 font-serif">
                         {principle.description}
                       </div>
                       {principle.source_passage && (
-                        <div className="text-xs text-slate-400 bg-slate-950/60 p-2.5 rounded border border-slate-800/60 italic font-serif">
+                        <div className="text-xs text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60 italic font-serif">
                           "{principle.source_passage}"
                         </div>
                       )}
@@ -439,6 +437,38 @@ export const CaseIntelligence: React.FC<CaseIntelligenceProps> = ({
                   {(!caseData.principles || caseData.principles.length === 0) && (
                     <div className="text-center py-12 text-slate-500 text-sm">
                       No legal principles recorded for this case.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Important Passages */}
+            {activeTab === 'Passages' && (
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  Key Cited Passages ({caseData.important_passages?.length || 0})
+                </h3>
+
+                <div className="space-y-3">
+                  {caseData.important_passages && caseData.important_passages.length > 0 ? (
+                    caseData.important_passages.map((passage: any, i: number) => (
+                      <div
+                        key={i}
+                        className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 space-y-2"
+                      >
+                        <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
+                          <span className="uppercase text-blue-400 font-bold">{passage.category || 'EXCERPT'}</span>
+                          {passage.page_number && <span>Page {passage.page_number}</span>}
+                        </div>
+                        <p className="text-xs text-slate-200 font-serif italic leading-relaxed">
+                          "{passage.text}"
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12 text-slate-500 text-sm">
+                      No prominent passages individually bookmarked for this case.
                     </div>
                   )}
                 </div>

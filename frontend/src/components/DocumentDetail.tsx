@@ -6,6 +6,9 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import AppNavbar from './common/AppNavbar';
 import apiClient, { getErrorMessage } from '../api/client';
+import Breadcrumbs from './ui/Breadcrumbs';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
 
 export default function DocumentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -15,22 +18,32 @@ export default function DocumentDetail() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isCancelled = false;
     const fetchDoc = async () => {
       try {
         const res = await apiClient.get(`/api/documents/${id}`);
-        setDoc(res.data);
+        if (!isCancelled) {
+          setDoc(res.data);
+        }
       } catch (err: unknown) {
-        setError(getErrorMessage(err, 'Failed to fetch document intelligence profile.'));
+        if (!isCancelled) {
+          setError(getErrorMessage(err, 'Failed to fetch document intelligence profile.'));
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
     fetchDoc();
+    return () => {
+      isCancelled = true;
+    };
   }, [id]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080c14] flex flex-col items-center justify-center text-slate-400 gap-3">
+      <div className="min-h-screen bg-[#080c14] flex flex-col items-center justify-center text-slate-400 gap-3 font-sans">
         <Loader2 size={32} className="animate-spin text-blue-500" />
         <p className="text-xs">Loading document intelligence dossier...</p>
       </div>
@@ -39,58 +52,60 @@ export default function DocumentDetail() {
 
   if (error || !doc) {
     return (
-      <div className="min-h-screen bg-[#080c14] flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-[#080c14] flex flex-col font-sans">
         <AppNavbar />
-        <div className="my-auto max-w-md">
-          <FileWarning size={48} className="text-slate-600 mb-4 mx-auto" />
-          <h2 className="text-lg font-bold text-white mb-2">Document Unavailable</h2>
-          <p className="text-xs text-slate-400 mb-6">
+        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
+          <FileWarning size={48} className="text-slate-600 mb-4" />
+          <h1 className="text-lg font-bold text-white mb-2">Document Unavailable</h1>
+          <p className="text-xs text-slate-400 mb-6 leading-relaxed">
             {error || 'The requested document record does not exist or access is restricted.'}
           </p>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<ArrowLeft size={14} />}
             onClick={() => navigate('/documents')}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-white rounded-lg text-xs font-semibold transition-colors"
           >
-            ← Back to Documents
-          </button>
-        </div>
+            Back to Document Catalog
+          </Button>
+        </main>
       </div>
     );
   }
+
+  const breadcrumbs = [
+    { label: 'Document Catalog', href: '/documents' },
+    { label: doc.title },
+  ];
 
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 font-sans flex flex-col">
       <AppNavbar />
 
-      <div className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
-        <button
-          type="button"
-          onClick={() => navigate('/documents')}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6 text-xs font-medium"
-        >
-          <ArrowLeft size={14} />
-          <span>Back to Document Catalog</span>
-        </button>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="mb-6">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
 
         {/* Top Header Card */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8 pb-6 border-b border-slate-800">
           <div>
-            <div className="flex items-center gap-2.5 mb-2.5">
-              <span className="px-2 py-0.5 rounded border border-slate-700/80 bg-slate-800/80 text-[10px] text-slate-300 font-mono uppercase">
+            <div className="flex items-center gap-2 mb-2.5">
+              <Badge variant="neutral" size="sm">
                 {doc.document_type || 'PDF'}
-              </span>
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono ${
+              </Badge>
+              <Badge
+                variant={
                   doc.status === 'READY'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    ? 'success'
                     : doc.status === 'FAILED'
-                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                    : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                }`}
+                    ? 'error'
+                    : 'info'
+                }
+                size="sm"
               >
                 {doc.status}
-              </span>
+              </Badge>
               {doc.version_number && doc.version_number > 1 && (
                 <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono text-[10px]">
                   v{doc.version_number}
@@ -126,23 +141,23 @@ export default function DocumentDetail() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              type="button"
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Eye size={14} />}
               onClick={() => navigate(`/documents/${id}/source`)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-white rounded-lg text-xs font-semibold transition-colors"
             >
-              <Eye size={14} />
-              <span>Read Full Transcript</span>
-            </button>
-            <button
-              type="button"
+              Read Full Transcript
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Search size={14} />}
               onClick={() => navigate(`/research?doc=${id}`)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors shadow-md shadow-blue-500/20"
             >
-              <Search size={14} />
-              <span>Research in Workspace</span>
-            </button>
+              Research in Workspace
+            </Button>
           </div>
         </div>
 
@@ -264,7 +279,7 @@ export default function DocumentDetail() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

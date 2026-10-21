@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, Plus, History, FileText, Bookmark, ChevronRight, X, Loader2,
   BookOpen, ShieldAlert, Sparkles, Scale, GitFork,
-  Copy, Check, AlertCircle
+  Copy, Check, AlertCircle, Trash2, StickyNote, CornerDownLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,10 +12,16 @@ import CaseIntelligence from './CaseIntelligence';
 import ComparativeIntelligence from './ComparativeIntelligence';
 import PrecedentGraph from './PrecedentGraph';
 import apiClient, { getErrorMessage } from '../api/client';
+import Button from './ui/Button';
+import ConfirmDialog from './ui/ConfirmDialog';
+import Modal from './ui/Modal';
+import { useToast } from '../hooks/useToast';
 
 export type ActiveWorkspaceView = 'SYNTHESIS' | 'SEARCH' | 'CASE' | 'COMPARE' | 'GRAPH' | 'BRIEF';
 
 export default function ResearchWorkspace() {
+  const toast = useToast();
+
   // Navigation & Sessions
   const [activeSession, setActiveSession] = useState<any>(null);
   const [sessions, setSessions] = useState<any[]>([]);
@@ -46,22 +52,48 @@ export default function ResearchWorkspace() {
   const [selectedSource, setSelectedSource] = useState<any | null>(null);
   const [copiedCitation, setCopiedCitation] = useState(false);
 
-  // Initialize: fetch existing sessions
+  // Dialog states: Delete Session & Add Note
+  const [sessionToDelete, setSessionToDelete] = useState<any | null>(null);
+  const [isDeletingSession, setIsDeletingSession] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteContent, setNoteContent] = useState('');
+  const [isAddingNote, setIsAddingNote] = useState(false);
+
+  // Fetch existing research sessions asynchronously
   const fetchSessions = useCallback(async () => {
     try {
       const res = await apiClient.get('/api/research');
-      setSessions(res.data || []);
-      if (res.data && res.data.length > 0 && !activeSession) {
-        setActiveSession(res.data[0]);
+      const loadedSessions = res.data || [];
+      setSessions(loadedSessions);
+      if (loadedSessions.length > 0) {
+        setActiveSession((prev: any) => prev || loadedSessions[0]);
       }
     } catch (err) {
       console.warn('Could not load research sessions:', err);
     }
-  }, [activeSession]);
+  }, []);
 
   useEffect(() => {
-    fetchSessions();
-  }, [fetchSessions]);
+    let isCancelled = false;
+    apiClient
+      .get('/api/research')
+      .then((res) => {
+        if (!isCancelled) {
+          const loadedSessions = res.data || [];
+          setSessions(loadedSessions);
+          if (loadedSessions.length > 0) {
+            setActiveSession((prev: any) => prev || loadedSessions[0]);
+          }
+        }
+      })
+      .catch((err) => {
+        if (!isCancelled) console.warn('Could not load research sessions:', err);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const createNewSession = async () => {
     try {
@@ -74,8 +106,9 @@ export default function ResearchWorkspace() {
       });
       setActiveSession(res.data);
       fetchSessions();
+      toast.success(`Created research session "${title}".`);
     } catch (err) {
-      console.error('Failed to create session', err);
+      toast.error(getErrorMessage(err, 'Failed to create session.'));
     }
   };
 
@@ -85,13 +118,53 @@ export default function ResearchWorkspace() {
       setActiveSession(res.data);
       setShowHistory(false);
     } catch (err) {
-      console.error('Failed to load session', err);
+      toast.error(getErrorMessage(err, 'Failed to load session.'));
+    }
+  };
+
+  const handleDeleteSession = async () => {
+    if (!sessionToDelete) return;
+    setIsDeletingSession(true);
+    try {
+      await apiClient.delete(`/api/research/${sessionToDelete.id}`);
+      toast.success(`Deleted session "${sessionToDelete.title}".`);
+      if (activeSession?.id === sessionToDelete.id) {
+        setActiveSession(null);
+      }
+      setSessionToDelete(null);
+      fetchSessions();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Could not delete session.'));
+    } finally {
+      setIsDeletingSession(false);
+    }
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeSession || !noteContent.trim() || isAddingNote) return;
+
+    setIsAddingNote(true);
+    try {
+      await apiClient.post(`/api/research/${activeSession.id}/notes`, {
+        content: noteContent.trim(),
+        reference_case_id: selectedCaseId || undefined,
+      });
+      toast.success('Researcher note saved to session.');
+      setNoteContent('');
+      setShowNoteModal(false);
+      loadSession(activeSession.id);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to add note to session.'));
+    } finally {
+      setIsAddingNote(false);
     }
   };
 
   const handleExecuteResearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!searchQuery.trim() || isLoading) return;
+    const cleanQuery = searchQuery.trim();
+    if (!cleanQuery || isLoading) return;
 
     setIsLoading(true);
     setQueryError(null);
@@ -101,8 +174,8 @@ export default function ResearchWorkspace() {
     if (!currentSessionId) {
       try {
         const sessionRes = await apiClient.post('/api/research', {
-          title: `Research: ${searchQuery.slice(0, 36)}`,
-          research_question: searchQuery,
+          title: `Research: ${cleanQuery.slice(0, 36)}`,
+          research_question: cleanQuery,
         });
         setActiveSession(sessionRes.data);
         currentSessionId = sessionRes.data.id;
@@ -116,7 +189,7 @@ export default function ResearchWorkspace() {
       if (searchMode === 'SYNTHESIS') {
         setActiveView('SYNTHESIS');
         const res = await apiClient.post('/api/research/ask', {
-          query: searchQuery,
+          query: cleanQuery,
           top_k: 8,
           summary_mode: 'RESEARCH',
         });
@@ -124,7 +197,7 @@ export default function ResearchWorkspace() {
       } else {
         setActiveView('SEARCH');
         const res = await apiClient.post('/api/search', {
-          query: searchQuery,
+          query: cleanQuery,
           top_k: 8,
         });
         setPassageResults(res.data || []);
@@ -136,19 +209,33 @@ export default function ResearchWorkspace() {
     }
   };
 
+  const handleKeyDownTextarea = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleExecuteResearch();
+    }
+  };
+
   const addCaseToSession = async (caseId: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (!activeSession) return;
+    if (!activeSession) {
+      toast.warning('Please create or select an active research session first.');
+      return;
+    }
     try {
       await apiClient.post(`/api/research/${activeSession.id}/cases`, { case_id: caseId });
       loadSession(activeSession.id);
+      toast.success('Case authority added to research session.');
     } catch (err) {
-      console.error('Failed to save case to session:', err);
+      toast.error(getErrorMessage(err, 'Failed to save case to session.'));
     }
   };
 
   const addEvidenceToSession = async (evidence: any) => {
-    if (!activeSession) return;
+    if (!activeSession) {
+      toast.warning('Please create or select an active research session first.');
+      return;
+    }
     try {
       await apiClient.post(`/api/research/${activeSession.id}/evidence`, {
         case_id: evidence.document_id || evidence.case_id || selectedCaseId,
@@ -158,8 +245,9 @@ export default function ResearchWorkspace() {
         page_number: evidence.page_number || evidence.page,
       });
       loadSession(activeSession.id);
+      toast.success('Source passage pinned to session evidence.');
     } catch (err) {
-      console.error('Failed to save evidence to session:', err);
+      toast.error(getErrorMessage(err, 'Failed to save evidence to session.'));
     }
   };
 
@@ -187,7 +275,7 @@ export default function ResearchWorkspace() {
       setCaseData(res.data);
       loadGraph(caseId, 1);
     } catch (err) {
-      console.error('Failed to load case profile:', err);
+      toast.error(getErrorMessage(err, 'Failed to load case profile.'));
     }
   };
 
@@ -205,14 +293,14 @@ export default function ResearchWorkspace() {
     if (!activeSession || (activeSession.cases?.length || 0) < 2) return;
     setActiveView('COMPARE');
     try {
-      const caseIds = activeSession.cases.map((c: any) => c.case_id);
+      const caseIds = activeSession.cases.map((c: any) => c.case_id).slice(0, 5);
       const res = await apiClient.post('/api/compare', {
         case_ids: caseIds,
         research_question: activeSession.research_question || searchQuery || undefined,
       });
       setComparisonData(res.data);
     } catch (err) {
-      console.error('Failed to run comparative intelligence:', err);
+      toast.error(getErrorMessage(err, 'Failed to execute comparative analysis.'));
     }
   };
 
@@ -229,9 +317,10 @@ export default function ResearchWorkspace() {
     const page = selectedSource.page_number ? `, p. ${selectedSource.page_number}` : '';
     const text = selectedSource.matched_text || selectedSource.supporting_text || selectedSource.text || '';
 
-    const citationText = `"${text}" — ${caseName}, ${court} ${year}${page} [LEXORA Verified Extract]`;
+    const citationText = `"${text}"\n\n— ${caseName}, ${court} ${year}${page} [LEXORA Verified Extract]`;
     navigator.clipboard.writeText(citationText);
     setCopiedCitation(true);
+    toast.success('Verbatim extract copied with primary citation.');
     setTimeout(() => setCopiedCitation(false), 2000);
   };
 
@@ -240,6 +329,7 @@ export default function ResearchWorkspace() {
       {/* Top Navigation */}
       <AppNavbar
         showSidebarToggle
+        isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
@@ -253,28 +343,30 @@ export default function ResearchWorkspace() {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ duration: 0.2 }}
-              className="w-72 border-r border-slate-800/80 bg-slate-950/70 flex flex-col z-20 absolute lg:relative h-full backdrop-blur-md shadow-xl"
+              className="w-72 sm:w-80 border-r border-slate-800/80 bg-slate-950/70 flex flex-col z-20 absolute lg:relative h-full backdrop-blur-md shadow-xl"
             >
               {/* Session Header */}
               <div className="p-4 border-b border-slate-800/80">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400 font-mono">
                     Active Session
                   </span>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setShowHistory(true)}
-                      className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded"
+                      className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors"
                       title="Session History"
+                      aria-label="View Session History"
                     >
                       <History size={14} />
                     </button>
                     <button
                       type="button"
                       onClick={createNewSession}
-                      className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded"
-                      title="New Session"
+                      className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors"
+                      title="New Research Session"
+                      aria-label="Create New Research Session"
                     >
                       <Plus size={14} />
                     </button>
@@ -286,28 +378,32 @@ export default function ResearchWorkspace() {
                 </h3>
 
                 {activeSession && (
-                  <button
-                    type="button"
-                    onClick={generateBrief}
-                    disabled={isGeneratingBrief}
-                    className="w-full mt-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-2"
-                  >
-                    {isGeneratingBrief ? (
-                      <>
-                        <Loader2 size={13} className="animate-spin" />
-                        <span>Synthesizing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FileText size={13} />
-                        <span>Generate Brief</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="mt-3 flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={generateBrief}
+                      isLoading={isGeneratingBrief}
+                      icon={<FileText size={13} />}
+                      className="flex-1 text-xs"
+                    >
+                      Generate Brief
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      icon={<StickyNote size={13} />}
+                      onClick={() => setShowNoteModal(true)}
+                      title="Add note to session"
+                    >
+                      Note
+                    </Button>
+                  </div>
                 )}
               </div>
 
-              {/* Saved Cases & Evidence */}
+              {/* Saved Cases, Evidence, and Notes */}
               <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
                 {activeSession ? (
                   <>
@@ -323,7 +419,7 @@ export default function ResearchWorkspace() {
                             onClick={openComparison}
                             className="text-[10px] text-blue-400 hover:underline flex items-center gap-1 font-semibold"
                           >
-                            <Scale size={11} /> Compare
+                            <Scale size={11} /> Compare (2-5)
                           </button>
                         )}
                       </div>
@@ -361,7 +457,8 @@ export default function ResearchWorkspace() {
                         {activeSession.evidence?.map((e: any) => (
                           <div
                             key={e.id}
-                            className="p-2.5 bg-slate-900/40 rounded-lg border border-slate-800/60"
+                            className="p-2.5 bg-slate-900/40 rounded-lg border border-slate-800/60 hover:border-slate-700 transition-colors cursor-pointer"
+                            onClick={() => inspectSource(e)}
                           >
                             <div className="text-[10px] font-bold text-amber-400/90 mb-1 flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -380,11 +477,47 @@ export default function ResearchWorkspace() {
                         )}
                       </div>
                     </div>
+
+                    {/* Researcher Notes */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                          Researcher Notes ({activeSession.notes?.length || 0})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowNoteModal(true)}
+                          className="text-[10px] text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+                        >
+                          <Plus size={10} /> Add
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {activeSession.notes?.map((n: any) => (
+                          <div
+                            key={n.id}
+                            className="p-2.5 bg-slate-900/40 rounded-lg border border-slate-800/60 text-xs text-slate-300 font-serif leading-relaxed"
+                          >
+                            <p>{n.content}</p>
+                            <div className="text-[9px] text-slate-500 font-mono mt-1">
+                              {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        ))}
+
+                        {(!activeSession.notes || activeSession.notes.length === 0) && (
+                          <div className="text-xs text-slate-500 italic py-2">
+                            No research notes captured yet.
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-3 text-center px-4">
                     <BookOpen size={32} className="opacity-20 text-blue-400" />
-                    <p className="text-xs leading-relaxed">
+                    <p className="text-xs leading-relaxed font-sans">
                       Enter a legal research question to start capturing cases and verified excerpts.
                     </p>
                   </div>
@@ -399,43 +532,53 @@ export default function ResearchWorkspace() {
           {/* Query Bar */}
           <div className="p-4 border-b border-slate-800/80 bg-slate-950/40 backdrop-blur-sm z-10">
             <form onSubmit={handleExecuteResearch} className="max-w-4xl mx-auto space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none text-slate-500">
-                    <Search size={16} />
-                  </div>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Ask a constitutional or commercial research question (e.g. proportionality standard under Article 21)..."
-                    className="w-full bg-slate-900/90 border border-slate-700/80 text-slate-100 placeholder-slate-500 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner"
-                  />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="research-query-input"
+                    className="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                  >
+                    <Sparkles size={13} className="text-blue-400" />
+                    <span>Legal Research Proposition or Inquiry</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono hidden sm:inline-block">
+                    Press Ctrl+Enter to execute • Shift+Enter for new line
+                  </span>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading || !searchQuery.trim()}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium text-sm transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>Synthesizing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={16} />
-                      <span>Execute Research</span>
-                    </>
-                  )}
-                </button>
+                <div className="relative">
+                  <textarea
+                    id="research-query-input"
+                    rows={2}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleKeyDownTextarea}
+                    placeholder="Enter proposition (e.g. proportionality test under Article 21, standards for Section 9 interim relief in arbitration, or lifting corporate veil under Companies Act)..."
+                    className="w-full bg-slate-900/90 border border-slate-700/80 text-slate-100 placeholder-slate-500 rounded-xl p-3 pr-28 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner resize-y min-h-[64px]"
+                  />
+
+                  <div className="absolute right-2.5 bottom-2.5">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="sm"
+                      isLoading={isLoading}
+                      disabled={isLoading || !searchQuery.trim()}
+                      icon={<CornerDownLeft size={13} />}
+                      className="shadow-md shadow-blue-500/20"
+                    >
+                      {isLoading ? 'Synthesizing...' : 'Execute'}
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               {/* Research Controls: Mode Selection & Quick Views */}
-              <div className="flex items-center justify-between text-xs pt-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs pt-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-500 text-[11px] uppercase font-bold tracking-wider">Mode:</span>
+                  <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider font-mono">
+                    Mode:
+                  </span>
                   <div className="flex rounded-lg bg-slate-900 border border-slate-800 p-0.5">
                     <button
                       type="button"
@@ -470,7 +613,7 @@ export default function ResearchWorkspace() {
                     <button
                       type="button"
                       onClick={() => setActiveView('SYNTHESIS')}
-                      className={`px-2.5 py-1 rounded text-xs transition-colors ${
+                      className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
                         activeView === 'SYNTHESIS'
                           ? 'bg-slate-800 text-blue-400 font-semibold'
                           : 'text-slate-400 hover:text-slate-200'
@@ -483,7 +626,7 @@ export default function ResearchWorkspace() {
                     <button
                       type="button"
                       onClick={() => setActiveView('SEARCH')}
-                      className={`px-2.5 py-1 rounded text-xs transition-colors ${
+                      className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
                         activeView === 'SEARCH'
                           ? 'bg-slate-800 text-blue-400 font-semibold'
                           : 'text-slate-400 hover:text-slate-200'
@@ -501,7 +644,7 @@ export default function ResearchWorkspace() {
           <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
             <div className="max-w-4xl mx-auto space-y-6">
               {/* Mandatory Legal Disclaimer & Corpus Scope Notice */}
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-xs text-amber-200/90 shadow-sm backdrop-blur-sm">
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 text-xs text-amber-200/90 shadow-sm backdrop-blur-sm">
                 <div className="flex items-center gap-2 font-bold text-amber-300 mb-1">
                   <ShieldAlert size={16} className="text-amber-400 shrink-0" />
                   <span>Controlled Pilot Safeguards & Mandatory Verification Standard</span>
@@ -516,7 +659,10 @@ export default function ResearchWorkspace() {
 
               {/* Query Error Notification */}
               {queryError && (
-                <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-start gap-3">
+                <div
+                  role="alert"
+                  className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-start gap-3"
+                >
                   <AlertCircle size={18} className="text-rose-400 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-rose-200">Research Request Failed</h4>
@@ -543,7 +689,7 @@ export default function ResearchWorkspace() {
                       </span>
                     </div>
 
-                    <div className="text-slate-100 text-sm leading-relaxed">
+                    <div className="text-slate-100 text-sm leading-relaxed font-sans">
                       <SafeMarkdown
                         content={synthesisResult.answer}
                         onCitationClick={(cite) => {
@@ -568,7 +714,7 @@ export default function ResearchWorkspace() {
 
                     {/* Abstention / Insufficient Evidence Notification */}
                     {synthesisResult.limitations && (
-                      <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-start gap-2.5 text-xs text-slate-400 bg-slate-950/40 p-3 rounded-lg">
+                      <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-start gap-2.5 text-xs text-slate-400 bg-slate-950/40 p-3.5 rounded-xl">
                         <AlertCircle size={15} className="text-amber-400 shrink-0 mt-0.5" />
                         <div>
                           <strong className="text-slate-300">Corpus Limitations & Scope:</strong>
@@ -685,28 +831,25 @@ export default function ResearchWorkspace() {
                                 </div>
 
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                  <button
-                                    type="button"
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    icon={<FileText size={12} />}
                                     onClick={() => inspectSource(src)}
-                                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition-colors flex items-center gap-1"
                                   >
-                                    <FileText size={12} /> Inspect
-                                  </button>
+                                    Inspect
+                                  </Button>
 
                                   {src.document_id && (
-                                    <button
-                                      type="button"
+                                    <Button
+                                      variant={isSaved ? 'primary' : 'outline'}
+                                      size="sm"
+                                      icon={isSaved ? <Bookmark size={12} /> : <Plus size={12} />}
                                       onClick={(e) => addCaseToSession(src.document_id, e)}
                                       disabled={isSaved}
-                                      className={`px-2.5 py-1 rounded text-xs transition-colors flex items-center gap-1 ${
-                                        isSaved
-                                          ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/50'
-                                          : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-                                      }`}
                                     >
-                                      {isSaved ? <Bookmark size={12} /> : <Plus size={12} />}
-                                      <span>{isSaved ? 'Saved' : 'Save'}</span>
-                                    </button>
+                                      {isSaved ? 'Saved' : 'Save'}
+                                    </Button>
                                   )}
                                 </div>
                               </div>
@@ -755,27 +898,24 @@ export default function ResearchWorkspace() {
                           </div>
 
                           <div className="flex gap-2 shrink-0">
-                            <button
-                              type="button"
+                            <Button
+                              variant={isSaved ? 'primary' : 'outline'}
+                              size="sm"
+                              icon={isSaved ? <Bookmark size={13} /> : <Plus size={13} />}
                               onClick={(e) => addCaseToSession(cid, e)}
                               disabled={isSaved}
-                              className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors ${
-                                isSaved
-                                  ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/50'
-                                  : 'bg-slate-800 text-slate-300 hover:bg-slate-750 border border-slate-700'
-                              }`}
                             >
-                              {isSaved ? <Bookmark size={13} /> : <Plus size={13} />}
-                              <span>{isSaved ? 'Saved' : 'Save Case'}</span>
-                            </button>
-                            <button
-                              type="button"
+                              {isSaved ? 'Saved' : 'Save Case'}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={<ChevronRight size={14} />}
                               onClick={() => openCase(cid)}
-                              className="p-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded border border-slate-700"
                               title="Open Dossier"
                             >
-                              <ChevronRight size={14} />
-                            </button>
+                              Open
+                            </Button>
                           </div>
                         </div>
 
@@ -788,7 +928,7 @@ export default function ResearchWorkspace() {
 
                   {passageResults.length === 0 && !isLoading && (
                     <div className="text-center py-16 text-slate-500 text-sm">
-                      No passages found for this search query. Try broader legal terms or switch to AI Legal Synthesis.
+                      No passages found for this query. Try broader legal terms or switch to AI Legal Synthesis.
                     </div>
                   )}
                 </div>
@@ -798,18 +938,18 @@ export default function ResearchWorkspace() {
               {activeView === 'CASE' && (
                 <div className="h-[750px] rounded-2xl overflow-hidden border border-slate-800 relative bg-[#080c14]">
                   <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={<GitFork size={13} />}
                       onClick={() => setActiveView('GRAPH')}
-                      className="px-3 py-1.5 bg-slate-800/90 text-blue-400 border border-slate-700 rounded-md text-xs font-semibold hover:bg-slate-700 transition-colors flex items-center gap-1.5"
                     >
-                      <GitFork size={13} />
-                      <span>Precedent Graph</span>
-                    </button>
+                      Precedent Graph
+                    </Button>
                     <button
                       type="button"
                       onClick={() => setActiveView('SYNTHESIS')}
-                      className="p-1.5 bg-slate-800/90 text-slate-400 hover:text-white border border-slate-700 rounded-md transition-colors"
+                      className="p-1.5 bg-slate-800/90 text-slate-400 hover:text-white border border-slate-700 rounded-lg transition-colors"
                       title="Close Dossier"
                     >
                       <X size={15} />
@@ -821,10 +961,12 @@ export default function ResearchWorkspace() {
                     onViewSource={(sourceId) => {
                       inspectSource({
                         case_name: caseData?.case_name || 'Selected Authority',
-                        matched_text: `Extracted passage ID: ${sourceId}`,
+                        matched_text: `Extracted passage anchor ID: ${sourceId}`,
                         court: caseData?.court,
                       });
                     }}
+                    onBookmarkCase={(cid) => addCaseToSession(cid)}
+                    isBookmarked={activeSession?.cases?.some((c: any) => c.case_id === selectedCaseId)}
                     onRefreshCase={() => selectedCaseId && openCase(selectedCaseId)}
                   />
                 </div>
@@ -850,13 +992,13 @@ export default function ResearchWorkspace() {
               {activeView === 'GRAPH' && (
                 <div className="h-[750px] rounded-2xl overflow-hidden border border-slate-800 relative bg-[#080c14]">
                   <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setActiveView('CASE')}
-                      className="px-3 py-1.5 bg-slate-800/90 text-slate-200 border border-slate-700 rounded-md text-xs font-semibold hover:bg-slate-700 transition-colors"
                     >
                       ← Back to Dossier
-                    </button>
+                    </Button>
                   </div>
 
                   <PrecedentGraph
@@ -879,7 +1021,7 @@ export default function ResearchWorkspace() {
                     <button
                       type="button"
                       onClick={() => setActiveView('SYNTHESIS')}
-                      className="p-1.5 text-slate-400 hover:text-white rounded"
+                      className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
                     >
                       <X size={18} />
                     </button>
@@ -922,7 +1064,7 @@ export default function ResearchWorkspace() {
                 <button
                   type="button"
                   onClick={() => setShowHistory(false)}
-                  className="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white"
+                  className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"
                 >
                   <X size={18} />
                 </button>
@@ -932,19 +1074,43 @@ export default function ResearchWorkspace() {
                 {sessions.map((s) => (
                   <div
                     key={s.id}
-                    onClick={() => loadSession(s.id)}
-                    className="p-4 bg-slate-950/50 hover:bg-slate-850 border border-slate-800/80 rounded-xl cursor-pointer flex justify-between items-center group transition-colors"
+                    className="p-4 bg-slate-950/50 hover:bg-slate-850 border border-slate-800/80 rounded-xl flex justify-between items-center group transition-colors"
                   >
-                    <div>
-                      <div className="font-semibold text-slate-200 group-hover:text-blue-400 text-xs">
+                    <div
+                      onClick={() => loadSession(s.id)}
+                      className="flex-1 cursor-pointer min-w-0 pr-4"
+                    >
+                      <div className="font-semibold text-slate-200 group-hover:text-blue-400 text-xs truncate">
                         {s.title}
                       </div>
                       <div className="text-[10px] text-slate-500 mt-1">
                         Updated {new Date(s.updated_at).toLocaleString()} • {s.cases?.length || 0} Cases •{' '}
-                        {s.evidence?.length || 0} Evidence Items
+                        {s.evidence?.length || 0} Evidence • {s.notes?.length || 0} Notes
                       </div>
                     </div>
-                    <ChevronRight size={16} className="text-slate-600 group-hover:text-blue-400" />
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSessionToDelete(s);
+                        }}
+                        className="text-slate-500 hover:text-rose-400 p-1.5"
+                        title="Delete Session"
+                      >
+                        <Trash2 size={13} />
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => loadSession(s.id)}
+                        className="p-1 text-slate-600 group-hover:text-blue-400"
+                        title="Open Session"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
                   </div>
                 ))}
 
@@ -971,7 +1137,7 @@ export default function ResearchWorkspace() {
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1 mb-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1 mb-1 font-mono">
                     <FileText size={12} />
                     <span>Source Evidence Inspector</span>
                   </div>
@@ -988,7 +1154,7 @@ export default function ResearchWorkspace() {
                 <button
                   type="button"
                   onClick={() => setSelectedSource(null)}
-                  className="p-1 text-slate-400 hover:text-white rounded"
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -1006,41 +1172,87 @@ export default function ResearchWorkspace() {
 
               {/* Action buttons */}
               <div className="flex items-center justify-between pt-2">
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={copiedCitation ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
                   onClick={copySourceCitation}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs rounded-lg border border-slate-700 transition-colors"
                 >
-                  {copiedCitation ? (
-                    <>
-                      <Check size={13} className="text-emerald-400" />
-                      <span className="text-emerald-400">Copied Citation!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={13} />
-                      <span>Copy with Citation</span>
-                    </>
-                  )}
-                </button>
+                  {copiedCitation ? 'Copied Citation!' : 'Copy with Citation'}
+                </Button>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      addEvidenceToSession(selectedSource);
-                      setSelectedSource(null);
-                    }}
-                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors shadow-md"
-                  >
-                    Save as Evidence
-                  </button>
-                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    addEvidenceToSession(selectedSource);
+                    setSelectedSource(null);
+                  }}
+                >
+                  Pin as Evidence
+                </Button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {/* Add Researcher Note Modal */}
+      <Modal
+        isOpen={showNoteModal}
+        onClose={() => setShowNoteModal(false)}
+        title="Add Researcher Annotation"
+        maxWidth="md"
+      >
+        <form onSubmit={handleAddNote} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              Annotation Note
+            </label>
+            <textarea
+              rows={4}
+              value={noteContent}
+              onChange={(e) => setNoteContent(e.target.value)}
+              placeholder="Record analytical impressions, doctrinal distinctions, or draft submission thoughts..."
+              className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 rounded-xl p-3 text-xs outline-none focus:border-blue-500 resize-y"
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNoteModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              isLoading={isAddingNote}
+              disabled={!noteContent.trim() || isAddingNote}
+            >
+              Save Note
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Session Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!sessionToDelete}
+        onClose={() => setSessionToDelete(null)}
+        onConfirm={handleDeleteSession}
+        title="Delete Research Session"
+        message={`Are you sure you want to delete session "${sessionToDelete?.title}"? All pinned cases, evidence, and notes in this session will be removed.`}
+        confirmLabel="Delete Session"
+        isDestructive
+        isLoading={isDeletingSession}
+      />
     </div>
   );
 }

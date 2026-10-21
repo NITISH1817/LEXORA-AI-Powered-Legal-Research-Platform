@@ -1,6 +1,6 @@
-# LEXORA Approved Gold Labels Evaluation Report — Phase 15
+# LEXORA Approved Gold Labels Evaluation Report — Phase 17
 
-**Execution Timestamp:** `2026-10-21T10:26:59.747147+00:00`
+**Execution Timestamp:** `2026-10-21T15:51:32.019761+00:00`
 **Benchmark Dataset:** `LEXORA Verified Legal Intelligence Benchmark` (v3.0.0)
 **Evaluation Scope:** Approved Gold Labels Only (`all`)
 **Evaluation Status:** `INSUFFICIENT_APPROVED_LABELS` (0 Approved Queries)
@@ -8,7 +8,7 @@
 ## 1. Evaluation Integrity & Gold Label Status
 
 > [!IMPORTANT]
-> **Evaluation Integrity Rule (Phase 15 Task 5):** Pending, in-review, and rejected items are strictly excluded from authoritative gold-label scoring. Automated evaluation code cannot approve legal gold labels.
+> **Evaluation Integrity Rule (Phase 17 Task 6):** Pending, in-review, and rejected items are strictly excluded from authoritative gold-label scoring. Automated evaluation code cannot approve legal gold labels.
 
 - **Total Benchmark Queries:** 160
 - **Approved Gold Label Queries:** 0 (0.00%)
@@ -26,4 +26,4 @@ In accordance with evaluation integrity standards:
 
 ## 3. Required Action Before Authoritative Scoring
 
-Qualified human legal practitioners must adjudicate the prioritized items in `evaluation/PHASE15_CRITICAL_REVIEW_QUEUE.md` using the human adjudication workflow (`evaluation/review_workflow.py`). Once items achieve `ReviewStatus.APPROVED` (`GOLD_LABEL_APPROVED`), this report will automatically score retrieval grounding, atomic claim support, and citation validity on the human-verified gold subset.
+Qualified human legal practitioners must adjudicate the prioritized items in `evaluation/PHASE17_CRITICAL_REVIEW_QUEUE.md` using the human adjudication workflow (`evaluation/review_workflow.py`). Once items achieve `ReviewStatus.APPROVED` (`GOLD_LABEL_APPROVED`), this report will automatically score retrieval grounding, atomic claim support, and citation validity on the human-verified gold subset.

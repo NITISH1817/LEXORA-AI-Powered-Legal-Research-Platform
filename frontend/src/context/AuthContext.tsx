@@ -1,32 +1,16 @@
-import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, type ReactNode } from 'react';
 import apiClient from '../api/client';
+import { AuthContext, type User } from './auth-types';
 
-export interface User {
-  id: number;
-  email: string;
-  full_name: string;
-  role: string;
-  is_active?: boolean;
-}
-
-interface AuthContextType {
-  token: string | null;
-  user: User | null;
-  login: (email: string, pass: string) => Promise<void>;
-  logout: () => void;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  refreshUser: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => {
     return localStorage.getItem('token') || localStorage.getItem('access_token');
   });
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    const initialToken = localStorage.getItem('token') || localStorage.getItem('access_token');
+    return !!initialToken;
+  });
 
   const logout = useCallback(() => {
     setToken(null);
@@ -34,35 +18,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('access_token');
     delete apiClient.defaults.headers.common['Authorization'];
+    setIsLoading(false);
   }, []);
 
-  const fetchUser = useCallback(async () => {
+  const refreshUser = useCallback(async () => {
+    if (!token) return;
     try {
       const res = await apiClient.get<User>('/api/auth/me');
       setUser(res.data);
     } catch (err) {
-      console.warn('Authentication token verification failed:', err);
+      console.warn('Authentication token refresh failed:', err);
       logout();
-    } finally {
-      setIsLoading(false);
     }
-  }, [logout]);
+  }, [token, logout]);
 
+  // Synchronize token and fetch user asynchronously without synchronous setState
   useEffect(() => {
-    if (token) {
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      localStorage.setItem('token', token);
-      localStorage.setItem('access_token', token);
-      fetchUser();
-    } else {
-      delete apiClient.defaults.headers.common['Authorization'];
-      localStorage.removeItem('token');
-      localStorage.removeItem('access_token');
-      setUser(null);
-      setIsLoading(false);
-    }
-  }, [token, fetchUser]);
+    let isCancelled = false;
 
+    if (!token) {
+      delete apiClient.defaults.headers.common['Authorization'];
+      return;
+    }
+
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    localStorage.setItem('token', token);
+    localStorage.setItem('access_token', token);
+
+    apiClient
+      .get<User>('/api/auth/me')
+      .then((res) => {
+        if (!isCancelled) {
+          setUser(res.data);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!isCancelled) {
+          console.warn('Authentication token verification failed:', err);
+          logout();
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [token, logout]);
+
+  // Listen for global unauthorized events emitted by apiClient response interceptor
   useEffect(() => {
     const handleUnauthorized = () => {
       logout();
@@ -97,12 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const refreshUser = async () => {
-    if (token) {
-      await fetchUser();
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -120,10 +117,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export default AuthProvider;

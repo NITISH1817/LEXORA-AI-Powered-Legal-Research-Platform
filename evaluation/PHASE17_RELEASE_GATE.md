@@ -23,8 +23,8 @@ In strict compliance with evaluation integrity principles:
 
 | Gate ID | Release Requirement | Evidence Artifact | Current Status | Responsible Role / Owner | Remaining Action | Blocking Severity |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
-| **GATE-01** | **Backend Technical Integrity & Test Suite** | `pytest backend/tests/` (205/205 tests passing) | **PASS** | Lead Systems Engineer | Maintain regression suite during continuous integration. | `NONE (PASS)` |
-| **GATE-02** | **Frontend Production Build & Code Quality** | `frontend/dist`, `oxlint` (0 errors, 9 non-blocking warnings) | **PASS** | Frontend Engineer | Maintain clean build artifacts and zero TypeScript errors. | `NONE (PASS)` |
+| **GATE-01** | **Backend Technical Integrity & Test Suite** | `pytest backend/tests/` (206/206 tests passing) | **PASS** | Lead Systems Engineer | Maintain regression suite during continuous integration. | `NONE (PASS)` |
+| **GATE-02** | **Frontend Production Build & Code Quality** | `frontend/dist`, `oxlint` (0 errors, 0 warnings) | **PASS** | Frontend Engineer | Maintain clean build artifacts and zero TypeScript errors. | `NONE (PASS)` |
 | **GATE-03** | **Role-Based Reviewer Authorization & Anti-Automation** | `evaluation/review_workflow.py`, `test_phase17_human_review_and_pilot_activation.py` | **PASS** | Legal Engineering / Compliance | Role-based registry active; false positives eliminated; bots blocked; senior permissions enforced. | `NONE (PASS)` |
 | **GATE-04** | **Critical Priority Legal Review Adjudication** | `evaluation/PHASE17_CRITICAL_REVIEW_QUEUE.md` | **BLOCKED (0/8 Reviewed)** | Senior Legal Counsel / Advocate Reviewer | Qualified advocates must execute review dossiers for all 8 Critical items (`bench_093`, `bench_132`, `bench_131`, `bench_121`, `bench_106`, `bench_072`, `bench_056`, `bench_007`). | **CRITICAL BLOCKER** |
 | **GATE-05** | **Authoritative Benchmark Gold Label Approval** | `evaluation/results/approved_labels_evaluation_report.md` (`INSUFFICIENT_APPROVED_LABELS`) | **BLOCKED (0/160 Approved)** | Human Legal Review Panel | Adjudicate and approve gold labels across dev (70) and held-out (90) splits. Automated code cannot approve. | **CRITICAL BLOCKER** |
@@ -46,8 +46,9 @@ The deployment boundary requires concurrent satisfaction of three distinct pilla
 |                            LEXORA RELEASE BOUNDARY                                |
 +-----------------------------------------------------------------------------------+
 |  1. TECHNICAL READINESS       [ STATUS: SATISFIED ]                                |
-|     - 205/205 backend tests passing (Exit Code 0 in 24.08s)                       |
-|     - Frontend production build succeeds cleanly (1.41s)                          |
+|     - 206/206 backend tests passing (Exit Code 0 in 70.37s)                       |
+|     - Frontend production build succeeds cleanly (1.91s)                          |
+|     - Frontend linter (oxlint) reports 0 errors and 0 warnings                    |
 |     - Role-based reviewer authorization active (false positives eliminated)       |
 |     - Public registration disabled; invitation code required; admin provisioning  |
 |     - Strict tenant isolation & PII sanitization verified                         |
