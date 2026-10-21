@@ -51,8 +51,12 @@ def _sanitize_filename(name: str) -> str:
     The original filename is stored separately; the sanitized name is only
     used for display — never for filesystem path construction.
     """
+    # Normalize backslashes to forward slashes for cross-platform POSIX compatibility
+    name = name.replace("\\", "/")
     # Take the basename only (prevents directory traversal via filename)
     name = os.path.basename(name)
+    # Strip any directory traversal dots (e.g. "..")
+    name = name.replace("..", "")
     # Keep only alphanumeric, dash, underscore, dot
     name = re.sub(r"[^\w\.\-]", "_", name)
     # Collapse multiple underscores/dots
