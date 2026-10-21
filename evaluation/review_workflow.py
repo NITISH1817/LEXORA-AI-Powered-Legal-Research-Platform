@@ -152,9 +152,14 @@ class LegalReviewWorkflow:
                 "Review requires qualified practicing advocate or judicial reviewer credentials."
             )
         
-        if not reviewer_id or reviewer_id.lower().startswith("bot_") or reviewer_id.lower() == "automated":
+        rev_lower = (reviewer_id or "").strip().lower()
+        forbidden_substrings = ["bot", "script", "ci", "automated", "runner", "synthetic", "test_bot"]
+        if not rev_lower or any(b in rev_lower for b in forbidden_substrings):
             if to_status in (ReviewStatus.APPROVED, ReviewStatus.REJECTED):
-                raise AutomatedApprovalForbiddenError("Valid human reviewer identifier required for final review disposition.")
+                raise AutomatedApprovalForbiddenError(
+                    f"Reviewer identifier '{reviewer_id}' is recognized as an automated agent or synthetic identifier. "
+                    "Final legal disposition requires a verified human advocate identifier."
+                )
 
         if to_status in (ReviewStatus.APPROVED, ReviewStatus.REJECTED):
             if not rationale or not rationale.strip():

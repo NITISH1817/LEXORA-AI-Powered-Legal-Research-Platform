@@ -2,8 +2,8 @@
 
 **Dataset:** Benchmark v3.0.0 (52 Passages, 160 Queries: 70 Dev, 90 Held-Out)  
 **Document Status:** ACTIVE REVIEW QUEUE AUDIT  
-**Audit Timestamp:** `2026-10-20T14:20:00Z`  
-**Overall Human Review State:** **160 / 160 PENDING HUMAN LEGAL REVIEW (100.0%)**  
+**Audit Timestamp:** `2026-10-21T08:45:00Z`  
+**Overall Human Review State:** **160 / 160 PENDING HUMAN LEGAL REVIEW (100.0%) — BLOCKED ON QUALIFIED ADVOCATE**  
 
 ---
 
@@ -13,7 +13,7 @@ An audit of the LEXORA Benchmark v3 catalog was performed using `evaluation/revi
 
 The audit confirms:
 - **Zero Approved Gold Labels:** No benchmark query has received formal approval from a licensed practicing advocate.
-- **Zero Automated Infiltration:** The workflow strictly prevents automated approval (`AutomatedApprovalForbiddenError`), ensuring that 100% of benchmark items remain in pending review status awaiting qualified counsel.
+- **Zero Automated Infiltration:** The workflow strictly prevents automated approval (`AutomatedApprovalForbiddenError`). Reviewer identity validation rejects any identifier containing `bot`, `script`, `ci`, `automated`, `runner`, `synthetic`, or `test_bot`, ensuring that 100% of benchmark items remain in pending review status awaiting qualified counsel.
 - **Strict Split Preservation:** The 70 development queries and 90 held-out queries are maintained with strict boundary separation and zero cross-split leakage.
 
 ```
@@ -47,21 +47,26 @@ The 160 benchmark queries are stratified across four risk tiers based on doctrin
 
 ---
 
-## 3. Legal Domain & Category Breakdown
+## 3. The Eight Critical Priority Items (Status: BLOCKED)
 
-| Legal Domain | Total Queries | Dev Split (N=70) | Held-Out Split (N=90) | Primary Controlling Authorities |
-| :--- | :---: | :---: | :---: | :--- |
-| **Constitutional Law & Rights** | **44** | 20 | 24 | *A.K. Gopalan*, *Maneka Gandhi*, *Puttaswamy*, *Kharak Singh*, *M.P. Sharma* |
-| **Commercial Law & Arbitration** | **36** | 16 | 20 | *Associate Builders*, *Ssangyong Engineering*, *NN Global*, *In Re Interplay* |
-| **Insolvency & Bankruptcy (IBC)** | **28** | 12 | 16 | IBC Section 53, *Essar Steel*, *Paschimanchal Vidyut*, *Rainbow Papers* |
-| **Criminal Law & Procedure** | **24** | 10 | 14 | CrPC Search Provisions, Article 20(3) Self-Incrimination, Evidentiary Warrants |
-| **General Jurisprudence & Control** | **28** | 12 | 16 | Negative Control Abstentions, Factual Timelines, Unanswerable Inquiries |
+All 8 critical-priority review packets have been compiled with primary source citations, procedural histories, controlling ratios, and advocate verification rubrics in `evaluation/PHASE16_CRITICAL_REVIEW_QUEUE.md`:
+
+| Query ID | Split | Legal Domain & Bench | Core Issue & Precedent Conflict | Review Status |
+| :--- | :---: | :--- | :--- | :---: |
+| **`bench_093`** | `dev` | Constitutional (9-Judge) | Evolution of Art 21 (*Gopalan* $\to$ *Maneka* $\to$ *Puttaswamy*) | **BLOCKED ON COUNSEL** |
+| **`bench_132`** | `held_out` | Constitutional (9-Judge) | Express overruling of *Kharak Singh* majority on privacy | **BLOCKED ON COUNSEL** |
+| **`bench_131`** | `held_out` | Constitutional (9-Judge) | Overruling of *M.P. Sharma* 8-judge bench on privacy & search | **BLOCKED ON COUNSEL** |
+| **`bench_121`** | `held_out` | Insolvency / Commercial | IBC Section 53 waterfall vs state taxes (*Rainbow Papers* vs *Paschimanchal*) | **BLOCKED ON COUNSEL** |
+| **`bench_106`** | `dev` | Commercial / Arbitration | Patent illegality narrowing under 2015 amendments to Sec 34(2A) | **BLOCKED ON COUNSEL** |
+| **`bench_072`** | `dev` | Commercial / Arbitration | Overruling of 5-judge *NN Global* by 7-judge *In Re Interplay* | **BLOCKED ON COUNSEL** |
+| **`bench_056`** | `dev` | Constitutional (9-Judge) | 3-fold proportionality test for privacy restrictions (*Puttaswamy*) | **BLOCKED ON COUNSEL** |
+| **`bench_007`** | `dev` | Constitutional (9-Judge) | Constitutional basis of privacy as intrinsic fundamental right | **BLOCKED ON COUNSEL** |
 
 ---
 
 ## 4. Separation of Review Lifecycle States
 
-In accordance with Phase 16 Task 4, the review workflow strictly enforces the distinction between non-interchangeable review stages:
+In accordance with Phase 16 requirements, the review workflow strictly enforces the distinction between non-interchangeable review stages:
 
 ```
 [ PENDING_HUMAN_LEGAL_REVIEW ] (160 Items)
@@ -89,90 +94,58 @@ In accordance with Phase 16 Task 4, the review workflow strictly enforces the di
 2. **`ANNOTATION_REVIEWED` $\neq$ `APPROVED`:**
    Auditing the rubric dimensions (ratio accuracy, citation support, procedural fidelity) establishes annotation quality, but does **NOT** elevate the item to the authoritative evaluation set until formal signed advocate approval is recorded.
 3. **`NEEDS_ADJUDICATION` & `DISAGREEMENT_ADJUDICATED`:**
-   When primary reviewers disagree on a nuanced doctrinal point (e.g. prospective vs retrospective overruling in *NN Global*), the query is escalated to a Senior Legal Adjudicator. Prior reviewer notes are preserved in the append-only audit log and never overwritten.
+   When primary reviewers disagree on a nuanced doctrinal point, the query is escalated to a Senior Legal Adjudicator. Prior reviewer notes are preserved in the append-only audit log and never overwritten.
 
 ---
 
-## 5. Advocate Review Instructions & Submission CLI
+## 5. Reviewer Authorization & Anti-Automation Safeguards
 
-To support genuine review by practicing advocates without simulating activity, a dedicated CLI review tool is operational at `scripts/submit_human_review.py`.
+`evaluation/review_workflow.py` actively validates reviewer identity:
+- Any reviewer identifier containing substring tokens `bot`, `script`, `ci`, `automated`, `runner`, `synthetic`, or `test_bot` raises `AutomatedApprovalForbiddenError`.
+- Transitioning to `APPROVED` or `REJECTED` without substantive legal rationale raises `ValueError`.
+- State jumps from `PENDING_HUMAN_LEGAL_REVIEW` directly to `APPROVED` are strictly forbidden; queries must pass through prerequisite verification stages.
 
-### Step-by-Step Advocate Review Workflow:
+---
 
-#### Step 1: List and Filter the Prioritized Queue
+## 6. Advocate Review Instructions & Submission CLI
+
+Practicing advocates submit reviews via `scripts/submit_human_review.py`:
+
 ```bash
-# View Priority 1 Critical items
-python scripts/submit_human_review.py --list-queue --tier CRITICAL
-
-# View all pending items
-python scripts/submit_human_review.py --list-queue --status-filter PENDING
-```
-
-#### Step 2: Inspect a Detailed Review Packet
-```bash
+# 1. Inspect prioritized review packet
 python scripts/submit_human_review.py --inspect bench_093
-```
-*Outputs: Exact legal question, split, procedural posture, indexed passages with paragraph citations, controlling ratio, contrary authorities, and advocate verification checklist.*
 
-#### Step 3: Claim Item for Review
-```bash
-python scripts/submit_human_review.py --claim bench_093 --reviewer "adv_priya_sharma_delhi_d1234" --rationale "Claiming for constitutional bench review"
-```
+# 2. Claim item for review
+python scripts/submit_human_review.py --claim bench_093 --reviewer "adv_delhi_1234" --rationale "Claiming for Art 21 audit"
 
-#### Step 4: Record Primary Source Verification
-```bash
+# 3. Record primary source verification
 python scripts/submit_human_review.py --verify-source bench_093 \
-  --reviewer "adv_priya_sharma_delhi_d1234" \
-  --source-auth "AIR 2017 SC 4161 / (2017) 10 SCC 1" \
-  --source-loc "Paragraphs 24-28 (Judgment of Dr. D.Y. Chandrachud, J.)" \
-  --rationale "SCR official reporter inspected. Bench composition 9-0 and judgment date confirmed."
-```
+  --reviewer "adv_delhi_1234" \
+  --source-auth "(2017) 10 SCC 1" \
+  --source-loc "Paras 24-28" \
+  --rationale "SCR and SCC transcripts inspected"
 
-#### Step 5: Record Annotation Review Rubric
-```bash
+# 4. Record annotation review
 python scripts/submit_human_review.py --review-annotation bench_093 \
-  --reviewer "adv_priya_sharma_delhi_d1234" \
+  --reviewer "adv_delhi_1234" \
   --ratio-ok --citation-ok --procedural-ok \
-  --rationale "Holding accurately traces Gopalan to Maneka to Puttaswamy. Article 14-19-21 golden triangle correctly cited."
-```
+  --rationale "Holding and golden triangle correctly cited"
 
-#### Step 6: Grant Final Gold Label Approval
-```bash
+# 5. Authorize gold label approval
 python scripts/submit_human_review.py --approve bench_093 \
-  --reviewer "adv_priya_sharma_delhi_d1234" \
-  --rationale "Approved as authoritative gold label. Ratio isolated from concurring obiter."
+  --reviewer "adv_delhi_1234" \
+  --rationale "Approved as authoritative gold label"
 ```
 
-#### Batch Review via Signed JSON Packet:
-External advocates can also submit reviews using a structured JSON packet:
+Or via signed packet import:
 ```bash
-python scripts/submit_human_review.py --import-packet /path/to/signed_review_packet.json
-```
-
-**JSON Review Packet Schema:**
-```json
-{
-  "query_id": "bench_093",
-  "reviewer_id": "adv_priya_sharma_delhi_d1234",
-  "decision": "APPROVED",
-  "rationale": "SCR official volume inspected; 9-judge ratio on Article 21 substantiated.",
-  "source_authority": "AIR 2017 SC 4161 / (2017) 10 SCC 1",
-  "source_location": "Paragraphs 24-28 (Judgment of Dr. D.Y. Chandrachud, J.)",
-  "source_verified": true,
-  "rubric_scores": {
-    "ratio_accuracy": true,
-    "citation_support": true,
-    "procedural_fidelity": true
-  }
-}
+python scripts/submit_human_review.py --import-packet /path/to/signed_packet.json
 ```
 
 ---
 
-## 6. Identification of External Dependencies
+## 7. Current Review Blockers
 
-Progress beyond the current pending state is strictly dependent on the following external, non-engineering milestones:
-
-1. **Practicing Advocate Review Panel:** Formal engagement of 2–3 licensed advocates (minimum 7 years standing at High Court or Supreme Court Bar) to execute review packets for the 8 critical items and 24 high-priority items.
-2. **Institutional Review & Ethical Authorization:** Authorization by a participating law firm or university legal clinic for supervised pilot testing.
-3. **Bar Enrollment Verification:** Verification of reviewer identifiers against state Bar Council rolls to ensure authentic human authorization.
+1. **Practicing Advocate Availability:** No licensed advocate or Constitution Bench specialist participated in this automated cycle.
+2. **Institutional Engagement:** Formal partnership agreements with law firms / clinics are pending execution.
+3. **Bar Roll Verification:** Integration with state Bar Council verification services is pending.

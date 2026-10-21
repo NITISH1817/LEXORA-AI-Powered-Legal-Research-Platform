@@ -1,9 +1,9 @@
 # LEXORA — Phase 16 Supervised Pilot Readiness & Practitioner Onboarding Protocol
 
-**Document Version:** 1.0.0  
+**Document Version:** 1.0.1  
 **Status:** PILOT READY (PENDING INSTITUTIONAL AUTHORIZATION)  
 **Target Deployment:** Limited Controlled Pilot with 3–5 Designated Legal Researchers  
-**Audit Timestamp:** `2026-10-20T14:20:00Z`  
+**Audit Timestamp:** `2026-10-21T08:45:00Z`  
 
 ---
 
@@ -13,9 +13,9 @@ This document establishes the operational onboarding protocol, technical safegua
 
 In strict compliance with evaluation integrity principles:
 1. **Designated Participants Only:** Deployment is strictly limited to 3–5 pre-credentialed legal researchers. Self-service public registration is disabled.
-2. **Corpus Limitations Visible:** All users are briefed and presented with prominent UI disclaimers detailing that LEXORA is currently grounded against landmark Supreme Court of India constitutional and commercial judgments. Specialized local state statutes and tribunal rules remain outside the verified corpus.
+2. **Corpus Limitations Visible:** All users are briefed and presented with prominent UI disclaimers detailing that LEXORA is currently grounded against landmark Supreme Court of India constitutional and commercial judgments. Specialized local state statutes and unindexed tribunal rules remain outside the verified corpus.
 3. **Mandatory Human Verification:** Platform outputs represent AI-assisted research synthesis and do **not** constitute legal advice. Practitioners must independently verify primary source transcripts before court reliance.
-4. **Authentic Evidence Collection:** No synthetic or simulated user accounts, feedback records, or usage metrics will be accepted as pilot evidence.
+4. **Authentic Evidence Collection:** No synthetic or simulated user accounts, feedback records, or usage metrics will be accepted as pilot evidence (`EMPTY_STATE_VERIFIED`).
 
 ---
 
@@ -41,7 +41,7 @@ The supervised pilot is designed for a focused cohort of 3–5 legal researchers
 Every participant must complete the following onboarding sequence prior to accessing the platform:
 
 ```
-[ STEP 1: Institutional Authorization ]
+[ STEP 1: Institutional Authorization & Bar Verification ]
              │
              ▼
 [ STEP 2: Pre-Pilot Safeguard Briefing & Non-Reliance Acknowledgment ]
@@ -70,13 +70,13 @@ Every participant must complete the following onboarding sequence prior to acces
 The platform enforces active safeguards verified through automated testing:
 
 ### 4.1 Persistent UI Disclaimer Banner
-In [`frontend/src/components/ResearchWorkspace.tsx`](file:///d:/AI-Legal-Research-System/frontend/src/components/ResearchWorkspace.tsx#L258-L271), a high-visibility safeguard banner is persistently displayed above research results:
+In `frontend/src/components/ResearchWorkspace.tsx`, a high-visibility safeguard banner is persistently displayed above research results:
 > **Controlled Pilot Safeguards & Mandatory Human Legal Review**  
 > **Corpus Scope:** Grounded strictly against indexed Supreme Court of India constitutional and commercial landmark authorities. Specialized local statutory rules and unindexed tribunal matters are outside the verified scope.  
 > **Human Review Required:** LEXORA provides AI-assisted research synthesis and does not constitute qualified legal advice. Practitioners must independently review all supporting passages and citations before court filings or consequential decisions.
 
 ### 4.2 In-App Citation Verification Modal
-Whenever a cited authority is clicked, the platform opens the primary excerpt in [`DocumentSourceViewer.tsx`](file:///d:/AI-Legal-Research-System/frontend/src/components/DocumentSourceViewer.tsx), allowing the practitioner to verify the quoted text against the indexed law report before saving evidence to their research session.
+Whenever a cited authority is clicked, the platform opens the primary excerpt in `DocumentSourceViewer.tsx`, allowing the practitioner to verify the quoted text against the indexed law report before saving evidence to their research session.
 
 ---
 
@@ -113,27 +113,21 @@ Feedback is submitted via `POST /api/evaluation/monitoring/feedback` (or in-sess
 All practitioner feedback submissions and flagged issues are governed by a mandatory **72-Hour Operational Triage SLA**.
 
 ### 6.1 Standardized Issue Taxonomy
-When an issue is flagged, it is triaged into one of the following nine standardized categories:
-
-| Issue Code | Doctrinal Failure Mode | Operational Remediation Protocol |
-| :--- | :--- | :--- |
-| **`IR_IRRELEVANT_PASSAGE`** | Retrieved passage did not address the queried legal issue or statute. | Re-tune BM25 + dense retrieval weights and enhance semantic legal expansion. |
-| **`CLAIM_UNSUPPORTED_BY_PASSAGE`** | Generated legal claim lacks evidentiary foundation in cited passage. | Review RAG prompt constraints; penalize ungrounded factual assertions. |
-| **`CITATION_METADATA_INVALID`** | Citation text or court/year/page metadata does not resolve to an authoritative report. | Validate metadata against official SCR/SCC gazette records; correct corpus metadata. |
-| **`CITATION_PASSAGE_UNSUPPORTIVE`**| Citation resolves to valid case, but the specific excerpt does not prove the claim. | Re-align passage-to-claim association to prevent multi-source cross-product dilution. |
-| **`ABSTENTION_FALSE_REFUSAL`** | System refused to answer despite indexed authoritative evidence. | Adjust confidence threshold for high-density legal queries. |
-| **`ABSTENTION_MISSED_HALLUCINATION`**| System answered an unanswerable or false-premise question. | Strengthen adversarial boundary detection and enforce strict negative control refusal. |
-| **`COMPARISON_FALSE_CONFLICT`** | System reported judicial conflict where precedents are harmonious or distinguishable. | Enhance bench composition and overruling timeline reasoning in comparative engine. |
-| **`TIMELINE_DATE_MISATTRIBUTION`** | Event date misattributed or confused with judgment pronouncement date. | Verify chronological extraction pipeline against judgment header dates. |
-| **`PROVIDER_TIMEOUT_OR_DEGRADED`** | LLM API provider failure, rate limit, or network disconnection. | Monitor fallback provider failover and latency budgets. |
+When an issue is flagged, it is triaged into one of nine standardized categories:
+1. `IR_IRRELEVANT_PASSAGE`: Retrieved passage did not address queried issue.
+2. `CLAIM_UNSUPPORTED_BY_PASSAGE`: Generated claim lacks basis in passage.
+3. `CITATION_METADATA_INVALID`: Law report citation does not resolve.
+4. `CITATION_PASSAGE_UNSUPPORTIVE`: Citation valid, but excerpt unsupportive.
+5. `ABSTENTION_FALSE_REFUSAL`: Refused despite presence of clear authority.
+6. `ABSTENTION_MISSED_HALLUCINATED_ANSWER`: Answered unanswerable query.
+7. `COMPARISON_FALSE_CONFLICT`: Hallucinated conflict between harmonious authorities.
+8. `TIMELINE_DATE_MISATTRIBUTION`: Chronological date misattributed.
+9. `PROVIDER_TIMEOUT_OR_DEGRADED`: Provider rate limit or disconnection.
 
 ### 6.2 Triage Timeline:
 - **T + 24 Hours:** Initial acknowledgment by Legal Engineering triage officer. Issue code assigned.
 - **T + 48 Hours:** Preliminary review by Lead Legal Annotator against indexed primary passages.
-- **T + 72 Hours:** Formal resolution disposition recorded:
-  * `RESOLVED_CORRECTED`: Annotation or retrieval index corrected.
-  * `RESOLVED_BY_DESIGN`: System behavior verified as correct; practitioner guidance provided.
-  * `ESCALATED_TO_ADJUDICATION`: Doctrinal ambiguity escalated to Senior Legal Adjudicator.
+- **T + 72 Hours:** Formal resolution disposition recorded (`RESOLVED_CORRECTED`, `RESOLVED_BY_DESIGN`, or `ESCALATED_TO_ADJUDICATION`).
 
 ---
 
