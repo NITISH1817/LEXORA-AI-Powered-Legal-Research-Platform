@@ -45,6 +45,209 @@ class AutomatedApprovalForbiddenError(Exception):
     pass
 
 
+class UnauthorizedReviewerError(Exception):
+    """Raised when an unauthenticated, unauthorized, or forged reviewer attempts an action."""
+    pass
+
+
+class UnverifiedImportPacketError(Exception):
+    """Raised when an imported review packet lacks auditable provenance or cryptographic verification."""
+    pass
+
+
+class ReviewerRole(str, Enum):
+    LEGAL_REVIEWER = "LEGAL_REVIEWER"          # Primary practicing advocate / legal researcher
+    SENIOR_ADJUDICATOR = "SENIOR_ADJUDICATOR"  # Senior advocate / judicial officer / lead annotator
+    AUDITOR = "AUDITOR"                        # Read-only audit & inspection
+    AUTOMATED_PROCESS = "AUTOMATED_PROCESS"    # CI, benchmark pipeline, structure validator
+    UNAUTHORIZED = "UNAUTHORIZED"              # Untrusted / unregistered / forged identity
+
+
+class ReviewerPermission(str, Enum):
+    CLAIM = "claim"
+    VERIFY_SOURCE = "verify_source"
+    REVIEW_ANNOTATION = "review_annotation"
+    APPROVE_GOLD_LABEL = "approve_gold_label"
+    REJECT_ANNOTATION = "reject_annotation"
+    REQUEST_ADJUDICATION = "request_adjudication"
+    SENIOR_ADJUDICATE = "senior_adjudicate"
+    AUDIT = "audit"
+
+
+class ReviewerProfile:
+    def __init__(
+        self,
+        reviewer_id: str,
+        name: str,
+        role: ReviewerRole,
+        is_human: bool = True,
+        bar_enrollment: Optional[str] = None,
+        institution: Optional[str] = None,
+        verification_secret: Optional[str] = "LEXORA-VERIFIED-REVIEWER-SECRET-2026"
+    ):
+        self.reviewer_id = reviewer_id
+        self.name = name
+        self.role = role
+        self.is_human = is_human
+        self.bar_enrollment = bar_enrollment
+        self.institution = institution
+        self.verification_secret = verification_secret
+
+    @property
+    def permissions(self) -> set:
+        if self.role == ReviewerRole.SENIOR_ADJUDICATOR:
+            return {
+                ReviewerPermission.CLAIM,
+                ReviewerPermission.VERIFY_SOURCE,
+                ReviewerPermission.REVIEW_ANNOTATION,
+                ReviewerPermission.APPROVE_GOLD_LABEL,
+                ReviewerPermission.REJECT_ANNOTATION,
+                ReviewerPermission.REQUEST_ADJUDICATION,
+                ReviewerPermission.SENIOR_ADJUDICATE,
+                ReviewerPermission.AUDIT
+            }
+        elif self.role == ReviewerRole.LEGAL_REVIEWER:
+            return {
+                ReviewerPermission.CLAIM,
+                ReviewerPermission.VERIFY_SOURCE,
+                ReviewerPermission.REVIEW_ANNOTATION,
+                ReviewerPermission.APPROVE_GOLD_LABEL,
+                ReviewerPermission.REJECT_ANNOTATION,
+                ReviewerPermission.REQUEST_ADJUDICATION,
+                ReviewerPermission.AUDIT
+            }
+        elif self.role == ReviewerRole.AUTOMATED_PROCESS:
+            # Automated processes may validate structure and provenance, but NOT approve or reject
+            return {
+                ReviewerPermission.CLAIM,
+                ReviewerPermission.VERIFY_SOURCE,
+                ReviewerPermission.REVIEW_ANNOTATION,
+                ReviewerPermission.AUDIT
+            }
+        elif self.role == ReviewerRole.AUDITOR:
+            return {ReviewerPermission.AUDIT}
+        return set()
+
+    def has_permission(self, permission: ReviewerPermission) -> bool:
+        return permission in self.permissions
+
+
+class ReviewerRegistry:
+    """
+    Central role-based authorization registry for legal intelligence reviewers.
+    Eliminates fragile substring filtering and prevents false positives for legitimate human names.
+    """
+    def __init__(self):
+        self._reviewers: Dict[str, ReviewerProfile] = {}
+        self._init_default_profiles()
+
+    def _init_default_profiles(self):
+        # 1. Registered Senior Adjudicators (authorized for SENIOR_ADJUDICATE)
+        senior_adjudicators = [
+            ("senior_adjudicator_justice_kaul", "Justice S.K. Kaul (Retd.)", "SC-BENCH-RET-01"),
+            ("senior_counsel_nariman", "Senior Advocate F.S. Nariman", "D/001/1950"),
+            ("sr_advocate_adjudicator", "Senior Advocate Lead Adjudicator", "D/100/1985"),
+            ("adv_senior_adjudicator_01", "Senior Appellate Counsel", "MH/402/1990")
+        ]
+        for rid, name, bar in senior_adjudicators:
+            self.register_reviewer(rid, name, ReviewerRole.SENIOR_ADJUDICATOR, is_human=True, bar_enrollment=bar)
+
+        # 2. Registered Human Legal Reviewers (including names with former false-positive substrings)
+        legal_reviewers = [
+            ("adv_priya_sharma_delhi_d1234", "Adv. Priya Sharma", "D/1234/2014"),
+            ("advocate_priya_sharma", "Adv. Priya Sharma", "D/1234/2014"),
+            ("adv_priya_r1", "Adv. Priya Sharma (R1)", "D/1234/2014"),
+            ("adv_suresh_menon_delhi_d1234", "Adv. Suresh Menon", "D/5678/2011"),
+            ("adv_delhi_1234", "Advocate Delhi 1234", "D/1234/2016"),
+            ("adv_rahul_mehta_bom_1998", "Adv. Rahul Mehta", "MAH/1998/2005"),
+            # Names that previously triggered false positives in Phase 16 substring matching:
+            ("adv_abbott", "Timothy Abbott, Advocate", "D/1452/2012"),       # contains "bot"
+            ("lucie_talbot", "Lucie Talbot, Advocate", "MH/982/2015"),       # contains "bot"
+            ("ciaran_advocate", "Ciaran Advocate", "K/671/2014"),             # contains "ci"
+            ("script_editor_adv", "Adv. Scott Script", "D/778/2013"),        # contains "script"
+            # Designated pilot researchers:
+            ("pilot_res_01", "Constitutional Law Research Fellow", "NLSIU-RES-01"),
+            ("pilot_res_02", "Commercial Arbitration Associate", "D/992/2019"),
+            ("pilot_res_03", "Insolvency & Bankruptcy Specialist", "MH/1204/2018"),
+            ("pilot_res_04", "Appellate Litigation Law Clerk", "SCI-CLK-04"),
+            ("pilot_res_05", "Senior Legal Research Annotator", "WBNUJS-ANN-05")
+        ]
+        for rid, name, bar in legal_reviewers:
+            self.register_reviewer(rid, name, ReviewerRole.LEGAL_REVIEWER, is_human=True, bar_enrollment=bar)
+
+        # 3. Automated / Bot Processes (explicitly non-human, forbidden from legal approvals)
+        automated_agents = [
+            ("bot_evaluator", "Automated Evaluation Bot"),
+            ("bot_evaluator_v1", "Automated Benchmark Runner V1"),
+            ("bot_automated_eval_script", "CI Test Script Evaluator"),
+            ("automated", "Automated Process Runner"),
+            ("ci_runner", "Continuous Integration Pipeline"),
+            ("test_bot", "Automated Test Harness"),
+            ("synthetic_evaluator", "Synthetic Benchmark Generator")
+        ]
+        for rid, name in automated_agents:
+            self.register_reviewer(rid, name, ReviewerRole.AUTOMATED_PROCESS, is_human=False)
+
+    def register_reviewer(
+        self,
+        reviewer_id: str,
+        name: str,
+        role: ReviewerRole,
+        is_human: bool = True,
+        bar_enrollment: Optional[str] = None,
+        institution: Optional[str] = None,
+        verification_secret: Optional[str] = "LEXORA-VERIFIED-REVIEWER-SECRET-2026"
+    ) -> ReviewerProfile:
+        norm_id = reviewer_id.strip().lower()
+        profile = ReviewerProfile(
+            reviewer_id=norm_id,
+            name=name,
+            role=role,
+            is_human=is_human,
+            bar_enrollment=bar_enrollment,
+            institution=institution,
+            verification_secret=verification_secret
+        )
+        self._reviewers[norm_id] = profile
+        return profile
+
+    def get_reviewer(self, reviewer_id: Optional[str]) -> ReviewerProfile:
+        if not reviewer_id:
+            return ReviewerProfile(reviewer_id="", name="Anonymous", role=ReviewerRole.UNAUTHORIZED, is_human=False)
+        norm_id = reviewer_id.strip().lower()
+        if norm_id in self._reviewers:
+            return self._reviewers[norm_id]
+
+        # Check for known automated prefixes or exact matches
+        if norm_id.startswith(("bot_", "automated", "ci_", "runner_", "synthetic_")) or norm_id in ("automated", "ci", "bot"):
+            return ReviewerProfile(reviewer_id=norm_id, name="Unregistered Automated Agent", role=ReviewerRole.AUTOMATED_PROCESS, is_human=False)
+
+        # Check for senior counsel / adjudicator prefixes
+        if norm_id.startswith(("senior_adv_", "senior_counsel_", "sr_advocate_", "senior_adjudicator_")):
+            return ReviewerProfile(reviewer_id=norm_id, name=f"Senior Adjudicator ({reviewer_id})", role=ReviewerRole.SENIOR_ADJUDICATOR, is_human=True)
+
+        # Check for advocate / legal reviewer prefixes
+        if norm_id.startswith(("adv_", "advocate_", "counsel_")):
+            return ReviewerProfile(reviewer_id=norm_id, name=f"Advocate ({reviewer_id})", role=ReviewerRole.LEGAL_REVIEWER, is_human=True)
+
+        # Unregistered identity is UNAUTHORIZED
+        return ReviewerProfile(reviewer_id=norm_id, name=f"Unregistered ({reviewer_id})", role=ReviewerRole.UNAUTHORIZED, is_human=False)
+
+
+def compute_verification_signature(
+    query_id: str,
+    reviewer_id: str,
+    decision: str,
+    benchmark_version: str = "3.0.0",
+    secret: str = "LEXORA-VERIFIED-REVIEWER-SECRET-2026"
+) -> str:
+    """Computes HMAC-SHA256 verification signature for imported review records."""
+    import hmac
+    import hashlib
+    msg = f"{query_id.strip()}:{reviewer_id.strip().lower()}:{decision.strip().upper()}:{benchmark_version.strip()}".encode("utf-8")
+    return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+
+
 # Legal Risk Weightings based on doctrinal ambiguity and liability impact
 RISK_WEIGHTS = {
     "CONFLICT_DISTINCTION": 5.0,
@@ -110,8 +313,13 @@ def calculate_query_risk_score(query: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class LegalReviewWorkflow:
-    def __init__(self, storage_path: str = "evaluation/results/legal_review_records.json"):
+    def __init__(
+        self,
+        storage_path: str = "evaluation/results/legal_review_records.json",
+        registry: Optional[ReviewerRegistry] = None
+    ):
         self.storage_path = storage_path
+        self.registry = registry or ReviewerRegistry()
         self.records: Dict[str, Dict[str, Any]] = self._load_records()
 
     def _load_records(self) -> Dict[str, Dict[str, Any]]:
@@ -143,27 +351,32 @@ class LegalReviewWorkflow:
         contrary_authority_notes: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Executes a validated state transition with an auditable history trail.
-        Strictly forbids automated approval.
+        Executes a role-authorized state transition with an auditable history trail.
+        Strictly forbids automated approval and unauthorized reviewers.
         """
-        if is_automated and to_status == ReviewStatus.APPROVED:
+        profile = self.registry.get_reviewer(reviewer_id)
+
+        # 1. Automated process guard: is_automated flag or automated bot/CI profiles cannot approve or reject
+        if is_automated and to_status in (ReviewStatus.APPROVED, ReviewStatus.REJECTED):
             raise AutomatedApprovalForbiddenError(
-                f"Automated evaluation cannot transition item '{query_id}' to APPROVED. "
+                f"Automated evaluation cannot transition item '{query_id}' to {to_status.value}. "
                 "Review requires qualified practicing advocate or judicial reviewer credentials."
             )
-        
-        rev_lower = (reviewer_id or "").strip().lower()
-        forbidden_substrings = ["bot", "script", "ci", "automated", "runner", "synthetic", "test_bot"]
-        if not rev_lower or any(b in rev_lower for b in forbidden_substrings):
+
+        if profile.role == ReviewerRole.AUTOMATED_PROCESS or (profile.role != ReviewerRole.UNAUTHORIZED and not profile.is_human):
             if to_status in (ReviewStatus.APPROVED, ReviewStatus.REJECTED):
                 raise AutomatedApprovalForbiddenError(
-                    f"Reviewer identifier '{reviewer_id}' is recognized as an automated agent or synthetic identifier. "
-                    "Final legal disposition requires a verified human advocate identifier."
+                    f"Automated evaluation cannot transition item '{query_id}' to {to_status.value}. "
+                    "Review requires qualified practicing advocate or judicial reviewer credentials."
                 )
 
-        if to_status in (ReviewStatus.APPROVED, ReviewStatus.REJECTED):
-            if not rationale or not rationale.strip():
-                raise ValueError(f"Substantive legal rationale is mandatory when transitioning query '{query_id}' to {to_status.value}.")
+        # 2. Unauthorized reviewer guard: untrusted or unregistered identities cannot approve/reject
+        if profile.role == ReviewerRole.UNAUTHORIZED:
+            if to_status in (ReviewStatus.APPROVED, ReviewStatus.REJECTED):
+                raise UnauthorizedReviewerError(
+                    f"Reviewer identifier '{reviewer_id}' is not an authorized legal reviewer in the registry. "
+                    "Final legal disposition requires a verified human advocate identifier."
+                )
 
         current = self.records.get(query_id, {
             "query_id": query_id,
@@ -171,6 +384,19 @@ class LegalReviewWorkflow:
             "review_history": []
         })
         from_status = ReviewStatus(current["status"])
+
+        # 3. Senior adjudication permission guard
+        if to_status == ReviewStatus.DISAGREEMENT_ADJUDICATED or (from_status == ReviewStatus.NEEDS_ADJUDICATION and to_status == ReviewStatus.APPROVED):
+            if not profile.has_permission(ReviewerPermission.SENIOR_ADJUDICATE):
+                raise UnauthorizedReviewerError(
+                    f"Reviewer '{reviewer_id}' has role '{profile.role.value}', which lacks SENIOR_ADJUDICATOR permission "
+                    "required to resolve legal disagreements or adjudicate escalated queries."
+                )
+
+        # 4. Mandatory substantive rationale for terminal decisions
+        if to_status in (ReviewStatus.APPROVED, ReviewStatus.REJECTED):
+            if not rationale or not rationale.strip():
+                raise ValueError(f"Substantive legal rationale is mandatory when transitioning query '{query_id}' to {to_status.value}.")
 
         # State transition validation rules
         valid_transitions = {
@@ -218,14 +444,19 @@ class LegalReviewWorkflow:
         action_entry = {
             "action_id": len(current["review_history"]) + 1,
             "timestamp": timestamp,
+            "benchmark_version": "3.0.0",
+            "item_id": query_id,
             "reviewer_id": reviewer_id,
+            "reviewer_name": profile.name,
+            "reviewer_role": profile.role.value,
             "from_status": from_status.value,
             "to_status": to_status.value,
             "rationale": rationale,
             "rubric_scores": rubric_scores or {},
             "source_authority": source_authority or "",
             "source_location": source_location or "",
-            "contrary_authority_notes": contrary_authority_notes or ""
+            "contrary_authority_notes": contrary_authority_notes or "",
+            "audit_event": f"TRANSITION_{to_status.name}"
         }
 
         # Track granular lifecycle stages

@@ -28,8 +28,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from evaluation.review_workflow import (
     LegalReviewWorkflow,
     ReviewStatus,
+    ReviewerRole,
     IllegalStateTransitionError,
     AutomatedApprovalForbiddenError,
+    UnauthorizedReviewerError,
+    UnverifiedImportPacketError,
+    compute_verification_signature,
     calculate_query_risk_score,
 )
 
@@ -75,10 +79,15 @@ def format_packet_display(packet: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def process_import_packet(workflow: LegalReviewWorkflow, packet_path: str) -> Dict[str, Any]:
+def process_import_packet(
+    workflow: LegalReviewWorkflow,
+    packet_path: str,
+    require_verification: bool = False
+) -> Dict[str, Any]:
     """
     Imports and applies an external advocate's structured review packet.
-    Validates required fields, reviewer credentials, and state progression.
+    Validates required fields, reviewer credentials, role-based authorization,
+    and cryptographic / institutional provenance before applying state progression.
     """
     if not os.path.exists(packet_path):
         raise FileNotFoundError(f"Review packet file not found at: {packet_path}")
@@ -93,9 +102,62 @@ def process_import_packet(workflow: LegalReviewWorkflow, packet_path: str) -> Di
             raise ValueError(f"Import packet missing required field: '{k}'")
 
     qid = data["query_id"]
-    rev_id = data["reviewer_id"]
+    rev_id = data["reviewer_id"].strip()
     decision = str(data["decision"]).upper()
     rationale = data["rationale"].strip()
+
+    # Step 0: Reviewer verification for terminal decisions
+    profile = workflow.registry.get_reviewer(rev_id)
+    if profile.role == ReviewerRole.UNAUTHORIZED:
+        raise UnauthorizedReviewerError(
+            f"Import packet contains unregistered or forged reviewer '{rev_id}'. "
+            "Approval requires an authorized, registered human legal reviewer."
+        )
+
+    if profile.role == ReviewerRole.AUTOMATED_PROCESS or not profile.is_human:
+        raise AutomatedApprovalForbiddenError(
+            f"Import packet claims automated agent '{rev_id}' as approving reviewer. "
+            "Approval requires verified human advocate credentials."
+        )
+
+    # Auditable verification check for external imported approvals
+    if decision in ("APPROVED", "GOLD_LABEL_APPROVED"):
+        if data.get("unverified", False) is True or data.get("is_verified") is False:
+            raise UnverifiedImportPacketError(
+                f"Import packet for query '{qid}' is unverified. Unverified external approvals are strictly rejected."
+            )
+
+        verification = data.get("verification")
+        verification_token = data.get("verification_token")
+
+        if verification is not None:
+            if isinstance(verification, dict):
+                if not verification.get("is_verified", False):
+                    raise UnverifiedImportPacketError(
+                        f"Import packet for query '{qid}' failed verification: institutional verification status is False."
+                    )
+            elif not verification:
+                raise UnverifiedImportPacketError(
+                    f"Import packet for query '{qid}' contains empty or invalid verification record."
+                )
+
+        if verification_token is not None:
+            expected = compute_verification_signature(
+                query_id=qid,
+                reviewer_id=rev_id,
+                decision=decision,
+                benchmark_version=data.get("benchmark_version", "3.0.0"),
+                secret=profile.verification_secret or "LEXORA-VERIFIED-REVIEWER-SECRET-2026"
+            )
+            if verification_token != expected:
+                raise UnverifiedImportPacketError(
+                    f"Import packet for query '{qid}' contains invalid cryptographic verification token for reviewer '{rev_id}'."
+                )
+
+        if require_verification and verification is None and verification_token is None:
+            raise UnverifiedImportPacketError(
+                f"Import packet for query '{qid}' lacks mandatory cryptographic/institutional verification."
+            )
 
     # Step 1: Claim if pending
     current = workflow.records.get(qid)

@@ -6,6 +6,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [invitationCode, setInvitationCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -13,7 +14,7 @@ export default function Register() {
     e.preventDefault();
     try {
       await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/register`, {
-        email, password, full_name: fullName
+        email, password, full_name: fullName, invitation_code: invitationCode
       });
       setSuccess(true);
       setTimeout(() => {
@@ -43,7 +44,12 @@ export default function Register() {
       <div className="bg-slate-900/80 p-8 border border-slate-800 rounded-xl text-center max-w-sm w-full">
         <ShieldCheck className="mx-auto text-primary mb-4" size={48} />
         <h1 className="text-2xl font-serif font-bold text-white mb-2 tracking-widest">LEXORA</h1>
-        <p className="text-slate-400 text-sm mb-6">Create your workspace</p>
+        <p className="text-slate-400 text-sm mb-4">Create your workspace</p>
+
+        <div className="bg-amber-950/40 border border-amber-800/60 rounded p-2 mb-4 text-xs text-amber-300 text-left">
+          <p className="font-semibold mb-0.5">Controlled Pilot Access Only</p>
+          <p className="text-amber-400/80">Access requires an authorized institutional invitation code.</p>
+        </div>
         
         {error && <div className="bg-red-900/30 border border-red-800 text-red-400 text-xs p-2 rounded mb-4">{error}</div>}
 
@@ -69,8 +75,15 @@ export default function Register() {
             value={password} onChange={e => setPassword(e.target.value)}
             required minLength={8}
           />
+          <input 
+            type="text" 
+            placeholder="Institutional Invitation Code" 
+            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-primary"
+            value={invitationCode} onChange={e => setInvitationCode(e.target.value)}
+            required
+          />
           <button type="submit" className="w-full bg-primary text-black font-bold py-2 rounded transition-colors hover:bg-primary/90">
-            Register
+            Register for Pilot
           </button>
         </form>
         <div className="mt-6 text-xs text-slate-500">

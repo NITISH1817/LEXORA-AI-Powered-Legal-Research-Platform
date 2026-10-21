@@ -8,7 +8,8 @@ def test_register_and_login():
     register_response = client.post("/api/auth/register", json={
         "email": "test_auth_user@example.com",
         "password": "securepassword123",
-        "full_name": "Test Auth User"
+        "full_name": "Test Auth User",
+        "invitation_code": "LEXORA-PILOT-2026-SUPERVISED"
     })
     
     # If already registered, it returns 400. We just want to ensure we can login.

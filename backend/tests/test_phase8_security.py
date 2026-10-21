@@ -54,7 +54,8 @@ def user_tokens():
         client.post("/api/auth/register", json={
             "email": email,
             "password": password,
-            "full_name": full_name
+            "full_name": full_name,
+            "invitation_code": "LEXORA-PILOT-2026-SUPERVISED"
         })
         login_resp = client.post("/api/auth/login", data={"username": email, "password": password})
         if login_resp.status_code == 200:

@@ -17,7 +17,8 @@ def auth_headers():
     reg_resp = client.post("/api/auth/register", json={
         "email": user_email,
         "password": user_pass,
-        "full_name": "Phase 3 Tester"
+        "full_name": "Phase 3 Tester",
+        "invitation_code": "LEXORA-PILOT-2026-SUPERVISED"
     })
     
     login_resp = client.post("/api/auth/login", data={

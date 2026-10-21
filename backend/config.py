@@ -56,6 +56,12 @@ class Settings(BaseSettings):
     PILOT_MONITORING_RETENTION_DAYS: int = 30
     PILOT_MONITORING_DIR: str = "./storage/monitoring"
 
+    # ----------------------------------------------------------------
+    # Phase 17 — Controlled Pilot Access & Registration Restriction
+    # ----------------------------------------------------------------
+    PILOT_REGISTRATION_RESTRICTED: bool = True
+    PILOT_INVITATION_CODE: str = "LEXORA-PILOT-2026-SUPERVISED"
+
     class Config:
         env_file = ".env"
 
