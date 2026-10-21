@@ -17,7 +17,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ timelineData, onViewSource 
   
   if (!rawEvents || rawEvents.length === 0) {
     return (
-      <div className="p-12 text-center text-slate-500 bg-[#0b0f19] h-full flex flex-col items-center justify-center">
+      <div className="p-12 text-center text-slate-500 bg-[#080c14] h-full flex flex-col items-center justify-center">
         <Clock size={36} className="text-slate-700 mb-3" />
         <h3 className="text-base font-semibold text-slate-300">No Timeline Data Available</h3>
         <p className="text-xs text-slate-500 mt-1 max-w-sm">
@@ -180,7 +180,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ timelineData, onViewSource 
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#0b0f19] relative">
+    <div className="h-full flex flex-col bg-[#080c14] relative">
       {/* Header */}
       <div className="p-6 border-b border-slate-800/50 bg-slate-900/30">
         <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2 mb-1.5">
